@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="theme-color" content="#0b0b0e" />
+<title>Equipment Tracker</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --bg: #0b0b0e;
+    --surface: #16161b;
+    --surface-2: #1f1f26;
+    --border: #2a2a33;
+    --text: #ececf1;
+    --text-dim: #9a9aa6;
+    --text-faint: #6b6b76;
+    --accent: #7c83ff;
+    --accent-soft: rgba(124,131,255,0.15);
+    --ok: #3ddc84;
+    --ok-soft: rgba(61,220,132,0.12);
+    --low: #ffaa33;
+    --low-soft: rgba(255,170,51,0.12);
+    --out: #ff4d5e;
+    --out-soft: rgba(255,77,94,0.14);
+    --shadow: 0 10px 30px rgba(0,0,0,0.4);
+  }
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 16px;
+    min-height: 100vh;
+    overscroll-behavior-y: contain;
+  }
+  body { padding-bottom: 100px; }
+
+  header {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(11,11,14,0.85);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 16px 10px;
+  }
+
+  /* NEW: Container to match main content width */
+  .header-content {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  .title-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px;
+    position: relative;
+  }
+  h1 {
+    font-size: 20px; font-weight: 700; letter-spacing: -0.3px;
+  }
+  .icon-btn {
+    width: 40px; height: 40px; border-radius: 12px;
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text); display: grid; place-items: center;
+    cursor: pointer; transition: background 0.15s;
+  }
+  .icon-btn:active { background: var(--surface-2); }
+  .icon-btn svg { width: 20px; height: 20px; }
+
+  .search {
+    position: relative; margin-bottom: 10px;
+  }
+  .search input {
+    width: 100%; padding: 11px 14px 11px 40px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; color: var(--text); font-size: 16px;
+    outline: none; transition: border-color 0.15s;
+  }
+  .search input:focus { border-color: var(--accent); }
+  .search svg {
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    width: 18px; height: 18px; color: var(--text-faint);
+  }
+
+  /* CHANGED: Center the tabs */
+  .tabs {
+    display: flex; gap: 6px; overflow-x: auto;
+    scrollbar-width: none; padding-bottom: 2px;
+    justify-content: center;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    padding: 7px 14px; border-radius: 999px;
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text-dim); font-size: 14px; font-weight: 500;
+    cursor: pointer; white-space: nowrap;
+    display: flex; align-items: center; gap: 6px;
+    transition: all 0.15s;
+  }
+  .tab .count {
+    font-size: 12px; color: var(--text-faint);
+    background: var(--surface-2); padding: 1px 7px; border-radius: 999px;
+  }
+  .tab.active {
+    background: var(--accent-soft); border-color: var(--accent);
+    color: var(--accent);
+  }
+  .tab.active .count { background: transparent; color: var(--accent); }
+
+  main { padding: 12px 16px; }
+
+  .item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 12px;
+    margin-bottom: 10px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px 12px;
+    align-items: center;
+    transition: transform 0.1s;
+    animation: fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .item:active { transform: scale(0.99); }
+  .item.status-out { border-color: rgba(255,77,94,0.35); background: linear-gradient(180deg, var(--out-soft), var(--surface)); }
+  .item.status-low  { border-color: rgba(255,170,51,0.3);  background: linear-gradient(180deg, var(--low-soft), var(--surface)); }
+
+  .item-main { min-width: 0; }
+  .item-name {
+    font-size: 16px; font-weight: 600; margin-bottom: 4px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .item-meta {
+    font-size: 13px; color: var(--text-dim);
+    display: flex; gap: 10px; flex-wrap: wrap;
+  }
+  .item-meta span { display: inline-flex; align-items: center; gap: 4px; }
+  .item-meta svg { width: 13px; height: 13px; }
+
+  .qty-controls {
+    display: flex; align-items: center; gap: 6px;
+  }
+  .qty-btn {
+    width: 34px; height: 34px; border-radius: 10px;
+    background: var(--surface-2); border: 1px solid var(--border);
+    color: var(--text); font-size: 18px; font-weight: 600;
+    cursor: pointer; display: grid; place-items: center;
+    transition: all 0.15s;
+  }
+  .qty-btn:active { background: var(--accent-soft); color: var(--accent); }
+  .qty-display {
+    min-width: 56px; text-align: center;
+    font-size: 15px; font-weight: 600;
+    padding: 6px 8px; border-radius: 10px;
+    background: var(--surface-2); border: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .qty-display.out { color: var(--out); background: var(--out-soft); border-color: rgba(255,77,94,0.3); }
+  .qty-display.low { color: var(--low); background: var(--low-soft); border-color: rgba(255,170,51,0.3); }
+
+  .badge {
+    display: inline-block; font-size: 11px; font-weight: 600;
+    padding: 2px 8px; border-radius: 999px; margin-left: 8px;
+    vertical-align: middle; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .badge.out { background: var(--out-soft); color: var(--out); }
+  .badge.low { background: var(--low-soft); color: var(--low); }
+  .badge.ok  { background: var(--ok-soft);  color: var(--ok); }
+
+  .empty {
+    text-align: center; padding: 60px 20px; color: var(--text-dim);
+  }
+  .empty svg { width: 56px; height: 56px; margin-bottom: 14px; opacity: 0.4; }
+  .empty h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+  .empty p { font-size: 14px; }
+
+  .fab {
+    position: fixed; bottom: 22px; right: 22px;
+    width: 58px; height: 58px; border-radius: 18px;
+    background: var(--accent); color: white;
+    border: none; cursor: pointer;
+    box-shadow: var(--shadow), 0 0 0 1px rgba(124,131,255,0.3);
+    display: grid; place-items: center;
+    transition: transform 0.15s;
+    z-index: 20;
+  }
+  .fab:active { transform: scale(0.94); }
+  .fab svg { width: 26px; height: 26px; }
+
+  /* Modal / bottom sheet */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+    z-index: 50; display: none; align-items: flex-end; justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  .overlay.open { display: flex; animation: fadeIn 0.2s; }
+  .sheet {
+    background: var(--surface);
+    width: 100%; max-width: 520px;
+    border-radius: 20px 20px 0 0;
+    padding: 18px 18px 24px;
+    max-height: 92vh; overflow-y: auto;
+    animation: slideUp 0.25s cubic-bezier(0.2,0.8,0.2,1);
+  }
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  .sheet-handle {
+    width: 40px; height: 4px; background: var(--border);
+    border-radius: 2px; margin: 0 auto 14px;
+  }
+  .sheet h2 {
+    font-size: 18px; font-weight: 700; margin-bottom: 16px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .close-btn {
+    background: none; border: none; color: var(--text-dim);
+    font-size: 24px; cursor: pointer; padding: 4px 8px;
+  }
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: block; font-size: 13px; color: var(--text-dim);
+    margin-bottom: 6px; font-weight: 500;
+  }
+  .field input, .field select {
+    width: 100%; padding: 12px 14px;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--text); font-size: 16px;
+    outline: none; transition: border-color 0.15s;
+  }
+  .field input:focus, .field select:focus { border-color: var(--accent); }
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .actions { display: flex; gap: 10px; margin-top: 18px; }
+  .btn {
+    flex: 1; padding: 13px; border-radius: 12px;
+    font-size: 15px; font-weight: 600; cursor: pointer;
+    border: 1px solid var(--border); transition: all 0.15s;
+  }
+  .btn-primary { background: var(--accent); color: white; border-color: var(--accent); }
+  .btn-primary:active { opacity: 0.85; }
+  .btn-secondary { background: var(--surface-2); color: var(--text); }
+  .btn-danger { background: var(--out-soft); color: var(--out); border-color: rgba(255,77,94,0.3); }
+
+  /* Menu */
+  .menu {
+    position: absolute; top: 58px; right: 0;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; box-shadow: var(--shadow);
+    padding: 6px; min-width: 180px; display: none; z-index: 30;
+  }
+  .menu.open { display: block; animation: fadeIn 0.15s; }
+  .menu button {
+    display: block; width: 100%; text-align: left;
+    padding: 10px 12px; background: none; border: none;
+    color: var(--text); font-size: 14px; cursor: pointer;
+    border-radius: 8px;
+  }
+  .menu button:active { background: var(--surface-2); }
+  .menu button.danger { color: var(--out); }
+
+  .toast {
+    position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+    background: var(--surface-2); color: var(--text);
+    padding: 10px 18px; border-radius: 999px;
+    border: 1px solid var(--border); font-size: 14px;
+    z-index: 100; opacity: 0; pointer-events: none;
+    transition: opacity 0.2s, transform 0.2s;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+
+  @media (min-width: 640px) {
+    main { max-width: 720px; margin: 0 auto; padding: 16px 24px; }
+    header { padding: 16px 24px 12px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-content">
+    <div class="title-row">
+      <h1>🧰 Equipment</h1>
+      <button class="icon-btn" id="menuBtn" aria-label="Menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+      </button>
+      <div class="menu" id="menu">
+        <button id="exportBtn">📤 Export data</button>
+        <button id="importBtn">📥 Import data</button>
+        <button id="sampleBtn">✨ Load sample items</button>
+        <button id="clearBtn" class="danger">🗑 Clear all</button>
+      </div>
+    </div>
+
+    <div class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input type="text" id="search" placeholder="Search equipment..." />
+    </div>
+
+    <div class="tabs" id="tabs">
+      <button class="tab active" data-filter="all">All <span class="count" id="count-all">0</span></button>
+      <button class="tab" data-filter="out">Out <span class="count" id="count-out">0</span></button>
+      <button class="tab" data-filter="low">Low <span class="count" id="count-low">0</span></button>
+      <button class="tab" data-filter="ok">OK <span class="count" id="count-ok">0</span></button>
+    </div>
+  </div>
+</header>
+
+<main id="list"></main>
+
+<button class="fab" id="addBtn" aria-label="Add item">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+</button>
+
+<!-- Add/Edit sheet -->
+<div class="overlay" id="overlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h2>
+      <span id="sheetTitle">Add equipment</span>
+      <button class="close-btn" id="closeSheet">×</button>
+    </h2>
+    <form id="itemForm">
+      <input type="hidden" id="itemId" />
+      <div class="field">
+        <label for="itemName">Name</label>
+        <input type="text" id="itemName" required placeholder="e.g. Safety gloves" />
+      </div>
+      <div class="row-2">
+        <div class="field">
+          <label for="itemQty">Current quantity</label>
+          <input type="number" id="itemQty" min="0" value="0" required />
+        </div>
+        <div class="field">
+          <label for="itemMin">Minimum threshold</label>
+          <input type="number" id="itemMin" min="0" value="5" required />
+        </div>
+      </div>
+      <div class="row-2">
+        <div class="field">
+          <label for="itemUnit">Unit</label>
+          <input type="text" id="itemUnit" placeholder="pcs, box, roll..." />
+        </div>
+        <div class="field">
+          <label for="itemCategory">Category</label>
+          <input type="text" id="itemCategory" placeholder="PPE, Tools..." />
+        </div>
+      </div>
+      <div class="field">
+        <label for="itemLocation">Location</label>
+        <input type="text" id="itemLocation" placeholder="Shelf A3, Warehouse..." />
+      </div>
+      <div class="actions">
+        <button type="button" class="btn btn-danger" id="deleteBtn" style="display:none">Delete</button>
+        <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<input type="file" id="fileInput" accept="application/json" style="display:none" />
+
+<script>
+(() => {
+  const STORAGE_KEY = 'equipment_tracker_v1';
+  let items = [];
+  let currentFilter = 'all';
+  let currentSearch = '';
+
+  const $ = id => document.getElementById(id);
+  const listEl = $('list');
+  const overlay = $('overlay');
+
+  // ---------- Persistence ----------
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      items = raw ? JSON.parse(raw) : [];
+    } catch { items = []; }
+  }
+  function save() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  }
+
+  // ---------- Status ----------
+  function statusOf(item) {
+    if (item.qty <= 0) return 'out';
+    if (item.qty <= item.min) return 'low';
+    return 'ok';
+  }
+  function statusLabel(s) {
+    return s === 'out' ? 'Out of stock' : s === 'low' ? 'Running low' : 'OK';
+  }
+
+  // ---------- Render ----------
+  function render() {
+    // Counts
+    let cAll = 0, cOut = 0, cLow = 0, cOk = 0;
+    items.forEach(it => {
+      cAll++;
+      const s = statusOf(it);
+      if (s === 'out') cOut++;
+      else if (s === 'low') cLow++;
+      else cOk++;
+    });
+    $('count-all').textContent = cAll;
+    $('count-out').textContent = cOut;
+    $('count-low').textContent = cLow;
+    $('count-ok').textContent = cOk;
+
+    // Filter + search
+    const q = currentSearch.trim().toLowerCase();
+    let filtered = items.filter(it => {
+      if (currentFilter !== 'all' && statusOf(it) !== currentFilter) return false;
+      if (!q) return true;
+      return (it.name + ' ' + (it.category||'') + ' ' + (it.location||''))
+        .toLowerCase().includes(q);
+    });
+
+    // Sort: out first, then low, then ok; alphabetical within
+    const order = { out: 0, low: 1, ok: 2 };
+    filtered.sort((a,b) => {
+      const sa = order[statusOf(a)], sb = order[statusOf(b)];
+      if (sa !== sb) return sa - sb;
+      return a.name.localeCompare(b.name);
+    });
+
+    if (filtered.length === 0) {
+      listEl.innerHTML = `
+        <div class="empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+            <path d="M3.3 7 12 12l8.7-5M12 22V12"/>
+          </svg>
+          <h3>${items.length === 0 ? 'No equipment yet' : 'Nothing matches'}</h3>
+          <p>${items.length === 0 ? 'Tap the + button to add your first item.' : 'Try a different search or filter.'}</p>
+        </div>`;
+      return;
+    }
+
+    listEl.innerHTML = filtered.map(it => {
+      const s = statusOf(it);
+      const unit = it.unit ? ` ${it.unit}` : '';
+      const metaParts = [];
+      if (it.category) metaParts.push(`<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg>${escapeHtml(it.category)}</span>`);
+      if (it.location) metaParts.push(`<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s-8-7.5-8-13a8 8 0 1 1 16 0c0 5.5-8 13-8 13z"/><circle cx="12" cy="9" r="2.5"/></svg>${escapeHtml(it.location)}</span>`);
+      metaParts.push(`<span>Min: ${it.min}${unit}</span>`);
+
+      return `
+        <div class="item status-${s}" data-id="${it.id}">
+          <div class="item-main" data-action="edit">
+            <div class="item-name">
+              ${escapeHtml(it.name)}
+              <span class="badge ${s}">${statusLabel(s)}</span>
+            </div>
+            <div class="item-meta">${metaParts.join('')}</div>
+          </div>
+          <div class="qty-controls">
+            <button class="qty-btn" data-action="dec" aria-label="Decrease">−</button>
+            <div class="qty-display ${s}" data-action="edit" title="Tap to edit">${it.qty}${unit}</div>
+            <button class="qty-btn" data-action="inc" aria-label="Increase">+</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // ---------- Events ----------
+  listEl.addEventListener('click', e => {
+    const itemEl = e.target.closest('.item');
+    if (!itemEl) return;
+    const id = itemEl.dataset.id;
+    const action = e.target.closest('[data-action]')?.dataset.action;
+    const item = items.find(i => i.id === id);
+    if (!item) return;
+
+    if (action === 'inc') {
+      item.qty++;
+      save(); render(); toast(`${item.name}: ${item.qty}`);
+    } else if (action === 'dec') {
+      if (item.qty > 0) { item.qty--; save(); render(); toast(`${item.name}: ${item.qty}`); }
+    } else {
+      openEdit(item);
+    }
+  });
+
+  // Tabs
+  $('tabs').addEventListener('click', e => {
+    const tab = e.target.closest('.tab');
+    if (!tab) return;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    currentFilter = tab.dataset.filter;
+    render();
+  });
+
+  // Search
+  $('search').addEventListener('input', e => {
+    currentSearch = e.target.value;
+    render();
+  });
+
+  // Add button
+  $('addBtn').addEventListener('click', () => openEdit(null));
+
+  // Sheet close
+  $('closeSheet').addEventListener('click', closeSheet);
+  $('cancelBtn').addEventListener('click', closeSheet);
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeSheet(); });
+
+  function openEdit(item) {
+    $('sheetTitle').textContent = item ? 'Edit equipment' : 'Add equipment';
+    $('itemId').value = item ? item.id : '';
+    $('itemName').value = item ? item.name : '';
+    $('itemQty').value = item ? item.qty : 0;
+    $('itemMin').value = item ? item.min : 5;
+    $('itemUnit').value = item ? (item.unit || '') : '';
+    $('itemCategory').value = item ? (item.category || '') : '';
+    $('itemLocation').value = item ? (item.location || '') : '';
+    $('deleteBtn').style.display = item ? 'block' : 'none';
+    overlay.classList.add('open');
+    setTimeout(() => $('itemName').focus(), 200);
+  }
+  function closeSheet() { overlay.classList.remove('open'); }
+
+  // Save
+  $('itemForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const id = $('itemId').value;
+    const data = {
+      name: $('itemName').value.trim(),
+      qty: Math.max(0, parseInt($('itemQty').value) || 0),
+      min: Math.max(0, parseInt($('itemMin').value) || 0),
+      unit: $('itemUnit').value.trim(),
+      category: $('itemCategory').value.trim(),
+      location: $('itemLocation').value.trim(),
+    };
+    if (!data.name) return;
+    if (id) {
+      const it = items.find(i => i.id === id);
+      Object.assign(it, data);
+      toast('Updated');
+    } else {
+      items.push({ id: 'i' + Date.now() + Math.random().toString(36).slice(2,6), ...data });
+      toast('Added');
+    }
+    save(); render(); closeSheet();
+  });
+
+  // Delete
+  $('deleteBtn').addEventListener('click', () => {
+    const id = $('itemId').value;
+    if (!id) return;
+    if (confirm('Delete this item?')) {
+      items = items.filter(i => i.id !== id);
+      save(); render(); closeSheet(); toast('Deleted');
+    }
+  });
+
+  // Menu
+  const menu = $('menu');
+  $('menuBtn').addEventListener('click', e => {
+    e.stopPropagation();
+    menu.classList.toggle('open');
+  });
+  document.addEventListener('click', e => {
+    if (!menu.contains(e.target) && e.target !== $('menuBtn')) menu.classList.remove('open');
+  });
+
+  $('exportBtn').addEventListener('click', () => {
+    const blob = new Blob([JSON.stringify(items, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `equipment-${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    menu.classList.remove('open');
+    toast('Exported');
+  });
+
+  $('importBtn').addEventListener('click', () => {
+    $('fileInput').click();
+    menu.classList.remove('open');
+  });
+  $('fileInput').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (!Array.isArray(data)) throw new Error('bad');
+        if (confirm(`Import ${data.length} items? This will replace current data.`)) {
+          items = data;
+          save(); render(); toast('Imported');
+        }
+      } catch { toast('Invalid file'); }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  });
+
+  $('sampleBtn').addEventListener('click', () => {
+    if (items.length > 0 && !confirm('This will add sample items to your list. Continue?')) return;
+    const samples = [
+      { name: 'Safety gloves', qty: 0, min: 10, unit: 'pairs', category: 'PPE', location: 'Shelf A1' },
+      { name: 'Hard hats', qty: 3, min: 8, unit: 'pcs', category: 'PPE', location: 'Shelf A2' },
+      { name: 'Safety goggles', qty: 25, min: 10, unit: 'pcs', category: 'PPE', location: 'Shelf A2' },
+      { name: 'Cable ties', qty: 2, min: 5, unit: 'packs', category: 'Consumables', location: 'Storage B' },
+      { name: 'Drill bits set', qty: 4, min: 2, unit: 'sets', category: 'Tools', location: 'Tool room' },
+      { name: 'Work lamps', qty: 1, min: 3, unit: 'pcs', category: 'Equipment', location: 'Shelf C4' },
+      { name: 'First aid kit', qty: 0, min: 1, unit: 'pcs', category: 'Safety', location: 'Office' },
+    ];
+    samples.forEach(s => items.push({ id: 'i' + Date.now() + Math.random().toString(36).slice(2,6), ...s }));
+    save(); render(); menu.classList.remove('open'); toast('Samples added');
+  });
+
+  $('clearBtn').addEventListener('click', () => {
+    if (items.length === 0) { toast('Nothing to clear'); return; }
+    if (confirm(`Delete all ${items.length} items? This cannot be undone.`)) {
+      items = []; save(); render(); menu.classList.remove('open'); toast('Cleared');
+    }
+  });
+
+  // Toast
+  let toastTimer;
+  function toast(msg) {
+    const t = $('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 1600);
+  }
+
+  // Init
+  load();
+  if (items.length === 0) {
+    // Auto-load samples on first visit so the UI isn't empty
+    const samples = [
+      { name: 'Safety gloves', qty: 0, min: 10, unit: 'pairs', category: 'PPE', location: 'Shelf A1' },
+      { name: 'Hard hats', qty: 3, min: 8, unit: 'pcs', category: 'PPE', location: 'Shelf A2' },
+      { name: 'Safety goggles', qty: 25, min: 10, unit: 'pcs', category: 'PPE', location: 'Shelf A2' },
+      { name: 'Cable ties', qty: 2, min: 5, unit: 'packs', category: 'Consumables', location: 'Storage B' },
+      { name: 'Drill bits set', qty: 4, min: 2, unit: 'sets', category: 'Tools', location: 'Tool room' },
+    ];
+    samples.forEach(s => items.push({ id: 'i' + Date.now() + Math.random().toString(36).slice(2,6), ...s }));
+    save();
+  }
+  render();
+})();
+</script>
+</body>
+</html>

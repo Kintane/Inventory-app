@@ -1,0 +1,47 @@
+[
+  {
+    "id": "i1783799522557zqqv",
+    "name": "Multi terad",
+    "qty": 5,
+    "min": 2,
+    "unit": "tk",
+    "category": "lõiketööriistad",
+    "location": "Multi kast"
+  },
+  {
+    "id": "i1783799522557rjba",
+    "name": "5mm metalli puur",
+    "qty": 1,
+    "min": 2,
+    "unit": "tk",
+    "category": "puurid",
+    "location": "Ladu"
+  },
+  {
+    "id": "i17837995225576o4e",
+    "name": "16mm labapuur",
+    "qty": 1,
+    "min": 2,
+    "unit": "tk",
+    "category": "puurid",
+    "location": "Shelf A2"
+  },
+  {
+    "id": "i1783799522557plhd",
+    "name": "Siini kumm",
+    "qty": 1,
+    "min": 3,
+    "unit": "m",
+    "category": "lõiketööriistad",
+    "location": "Ladu"
+  },
+  {
+    "id": "i1783799522557ki36",
+    "name": "Torx 10",
+    "qty": 0,
+    "min": 2,
+    "unit": "tk",
+    "category": "Otsikud",
+    "location": "Juudi kast"
+  }
+]

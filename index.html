@@ -107,7 +107,6 @@
 
   main { padding: 12px 16px; }
 
-  /* CHANGED: Compact 2-row cards */
   .item {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -364,6 +363,7 @@
   const $ = id => document.getElementById(id);
   const listEl = $('list');
   const overlay = $('overlay');
+  const sheet = overlay.querySelector('.sheet');
 
   async function loadDataFromJson() {
     try {
@@ -447,7 +447,6 @@
       const s = statusOf(it);
       const unit = it.unit ? ` ${it.unit}` : '';
       
-      // Build compact meta: qty/min · category · location
       const metaParts = [];
       metaParts.push(`<span class="qty ${s}">${it.qty}/${it.min}${unit}</span>`);
       if (it.category) metaParts.push(`<span class="sep">·</span><span>${escapeHtml(it.category)}</span>`);
@@ -468,7 +467,6 @@
     return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
 
-  // CHANGED: Tap anywhere on card opens edit (no +/- buttons)
   listEl.addEventListener('click', e => {
     const itemEl = e.target.closest('.item');
     if (!itemEl) return;
@@ -509,11 +507,23 @@
     $('itemLocation').value = item ? (item.location || '') : '';
     $('deleteBtn').style.display = item ? 'block' : 'none';
     
-    // CHANGED: Scroll to top before opening sheet so keyboard doesn't block fields
+    // Scroll window to top before opening
     window.scrollTo({ top: 0, behavior: 'instant' });
     
+    // Also scroll the sheet content to top
+    sheet.scrollTop = 0;
+    
     overlay.classList.add('open');
-    setTimeout(() => $('itemName').focus(), 250);
+    
+    // Focus after sheet is visible, then scroll again to ensure visibility
+    setTimeout(() => {
+      $('itemName').focus();
+      // Scroll to top again after keyboard might appear
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'instant' });
+        sheet.scrollTop = 0;
+      }, 100);
+    }, 250);
   }
   function closeSheet() { overlay.classList.remove('open'); }
 

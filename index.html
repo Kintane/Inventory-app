@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <meta name="theme-color" content="#0b0b0e" />
 <title>Equipment Tracker</title>
 <style>
@@ -179,20 +179,58 @@
   .fab:active { transform: scale(0.94); }
   .fab svg { width: 26px; height: 26px; }
 
+  /* ---------- Overlay / Sheet ---------- */
   .overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.6);
-    z-index: 50; display: none; align-items: flex-end; justify-content: center;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 50;
+    display: none;
+    justify-content: center;
     backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
   }
-  .overlay.open { display: flex; animation: fadeIn 0.2s; }
-  .sheet {
-    background: var(--surface);
-    width: 100%; max-width: 520px;
-    border-radius: 20px 20px 0 0;
-    padding: 18px 18px 24px;
-    max-height: 92vh; overflow-y: auto;
-    animation: slideUp 0.25s cubic-bezier(0.2,0.8,0.2,1);
+  .overlay.open {
+    display: flex;
+    animation: fadeIn 0.2s;
   }
+
+  /* MOBILE: full-screen sheet from the TOP so keyboard never blocks fields */
+  @media (max-width: 639px) {
+    .overlay.open {
+      align-items: flex-start;
+    }
+    .sheet {
+      width: 100%;
+      height: 100vh;
+      height: 100dvh;
+      max-height: 100vh;
+      max-height: 100dvh;
+      border-radius: 0;
+      padding: 18px 18px 24px;
+      padding-top: calc(18px + env(safe-area-inset-top, 0px));
+      padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .sheet-handle { display: none; }
+  }
+
+  /* DESKTOP: bottom sheet */
+  @media (min-width: 640px) {
+    .overlay.open {
+      align-items: flex-end;
+    }
+    .sheet {
+      width: 100%;
+      max-width: 520px;
+      border-radius: 20px 20px 0 0;
+      padding: 18px 18px 24px;
+      max-height: 92vh;
+      overflow-y: auto;
+      animation: slideUp 0.25s cubic-bezier(0.2,0.8,0.2,1);
+    }
+  }
+
   @keyframes slideUp {
     from { transform: translateY(100%); }
     to { transform: translateY(0); }
@@ -446,7 +484,7 @@
     listEl.innerHTML = filtered.map(it => {
       const s = statusOf(it);
       const unit = it.unit ? ` ${it.unit}` : '';
-      
+
       const metaParts = [];
       metaParts.push(`<span class="qty ${s}">${it.qty}/${it.min}${unit}</span>`);
       if (it.category) metaParts.push(`<span class="sep">·</span><span>${escapeHtml(it.category)}</span>`);
@@ -506,24 +544,14 @@
     $('itemCategory').value = item ? (item.category || '') : '';
     $('itemLocation').value = item ? (item.location || '') : '';
     $('deleteBtn').style.display = item ? 'block' : 'none';
-    
-    // Scroll window to top before opening
-    window.scrollTo({ top: 0, behavior: 'instant' });
-    
-    // Also scroll the sheet content to top
+
+    // Reset scroll position of the sheet content
     sheet.scrollTop = 0;
-    
+
     overlay.classList.add('open');
-    
-    // Focus after sheet is visible, then scroll again to ensure visibility
-    setTimeout(() => {
-      $('itemName').focus();
-      // Scroll to top again after keyboard might appear
-      setTimeout(() => {
-        window.scrollTo({ top: 0, behavior: 'instant' });
-        sheet.scrollTop = 0;
-      }, 100);
-    }, 250);
+
+    // Focus the name field after the sheet is visible
+    setTimeout(() => $('itemName').focus(), 200);
   }
   function closeSheet() { overlay.classList.remove('open'); }
 

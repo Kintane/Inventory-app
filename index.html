@@ -6,6 +6,7 @@
 <meta name="theme-color" content="#0b0b0e" />
 <title>Equipment Tracker</title>
 <style>
+  /* [All your existing CSS stays the same] */
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   :root {
     --bg: #0b0b0e;
@@ -34,7 +35,6 @@
     overscroll-behavior-y: contain;
   }
   body { padding-bottom: 100px; }
-
   header {
     position: sticky; top: 0; z-index: 10;
     background: rgba(11,11,14,0.85);
@@ -43,20 +43,12 @@
     border-bottom: 1px solid var(--border);
     padding: 14px 16px 10px;
   }
-
-  .header-content {
-    max-width: 720px;
-    margin: 0 auto;
-  }
-
+  .header-content { max-width: 720px; margin: 0 auto; }
   .title-row {
     display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 10px;
-    position: relative;
+    margin-bottom: 10px; position: relative;
   }
-  h1 {
-    font-size: 20px; font-weight: 700; letter-spacing: -0.3px;
-  }
+  h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
   .icon-btn {
     width: 40px; height: 40px; border-radius: 12px;
     background: var(--surface); border: 1px solid var(--border);
@@ -65,10 +57,7 @@
   }
   .icon-btn:active { background: var(--surface-2); }
   .icon-btn svg { width: 20px; height: 20px; }
-
-  .search {
-    position: relative; margin-bottom: 10px;
-  }
+  .search { position: relative; margin-bottom: 10px; }
   .search input {
     width: 100%; padding: 11px 14px 11px 40px;
     background: var(--surface); border: 1px solid var(--border);
@@ -80,7 +69,6 @@
     position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
     width: 18px; height: 18px; color: var(--text-faint);
   }
-
   .tabs {
     display: flex; gap: 6px; overflow-x: auto;
     scrollbar-width: none; padding-bottom: 2px;
@@ -104,9 +92,7 @@
     color: var(--accent);
   }
   .tab.active .count { background: transparent; color: var(--accent); }
-
   main { padding: 12px 16px; }
-
   .item {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -124,7 +110,6 @@
   .item:active { transform: scale(0.99); }
   .item.status-out { border-color: rgba(255,77,94,0.35); background: linear-gradient(180deg, var(--out-soft), var(--surface)); }
   .item.status-low  { border-color: rgba(255,170,51,0.3);  background: linear-gradient(180deg, var(--low-soft), var(--surface)); }
-
   .item-name {
     font-size: 15px; font-weight: 600;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -148,7 +133,6 @@
   .item-meta .qty.out { color: var(--out); background: var(--out-soft); }
   .item-meta .qty.low { color: var(--low); background: var(--low-soft); }
   .item-meta .qty.ok  { color: var(--ok);  background: var(--ok-soft); }
-
   .badge {
     display: inline-block; font-size: 10px; font-weight: 600;
     padding: 2px 7px; border-radius: 999px;
@@ -158,14 +142,12 @@
   .badge.out { background: var(--out-soft); color: var(--out); }
   .badge.low { background: var(--low-soft); color: var(--low); }
   .badge.ok  { background: var(--ok-soft);  color: var(--ok); }
-
   .empty {
     text-align: center; padding: 60px 20px; color: var(--text-dim);
   }
   .empty svg { width: 56px; height: 56px; margin-bottom: 14px; opacity: 0.4; }
   .empty h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; color: var(--text); }
   .empty p { font-size: 14px; }
-
   .fab {
     position: fixed; bottom: 22px; right: 22px;
     width: 58px; height: 58px; border-radius: 18px;
@@ -178,7 +160,6 @@
   }
   .fab:active { transform: scale(0.94); }
   .fab svg { width: 26px; height: 26px; }
-
   .overlay {
     position: fixed; inset: 0;
     background: rgba(0,0,0,0.6);
@@ -188,38 +169,24 @@
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
   }
-  .overlay.open {
-    display: flex;
-    animation: fadeIn 0.2s;
-  }
-
+  .overlay.open { display: flex; animation: fadeIn 0.2s; }
   @media (max-width: 639px) {
-    .overlay.open {
-      align-items: flex-start;
-    }
+    .overlay.open { align-items: flex-start; }
     .sheet {
-      width: 100%;
-      height: 100vh;
-      height: 100dvh;
-      max-height: 100vh;
-      max-height: 100dvh;
+      width: 100%; height: 100vh; height: 100dvh;
+      max-height: 100vh; max-height: 100dvh;
       border-radius: 0;
       padding: 18px 18px 24px;
       padding-top: calc(18px + env(safe-area-inset-top, 0px));
       padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
+      overflow-y: auto; -webkit-overflow-scrolling: touch;
     }
     .sheet-handle { display: none; }
   }
-
   @media (min-width: 640px) {
-    .overlay.open {
-      align-items: flex-end;
-    }
+    .overlay.open { align-items: flex-end; }
     .sheet {
-      width: 100%;
-      max-width: 520px;
+      width: 100%; max-width: 520px;
       border-radius: 20px 20px 0 0;
       padding: 18px 18px 24px;
       max-height: 92vh;
@@ -227,7 +194,6 @@
       animation: slideUp 0.25s cubic-bezier(0.2,0.8,0.2,1);
     }
   }
-
   @keyframes slideUp {
     from { transform: translateY(100%); }
     to { transform: translateY(0); }
@@ -257,7 +223,6 @@
   }
   .field input:focus, .field select:focus { border-color: var(--accent); }
   .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-
   .actions { display: flex; gap: 10px; margin-top: 18px; }
   .btn {
     flex: 1; padding: 13px; border-radius: 12px;
@@ -268,7 +233,6 @@
   .btn-primary:active { opacity: 0.85; }
   .btn-secondary { background: var(--surface-2); color: var(--text); }
   .btn-danger { background: var(--out-soft); color: var(--out); border-color: rgba(255,77,94,0.3); }
-
   .menu {
     position: absolute; top: 58px; right: 0;
     background: var(--surface); border: 1px solid var(--border);
@@ -284,7 +248,6 @@
   }
   .menu button:active { background: var(--surface-2); }
   .menu button.danger { color: var(--out); }
-
   .toast {
     position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
     background: var(--surface-2); color: var(--text);
@@ -294,7 +257,6 @@
     transition: opacity 0.2s, transform 0.2s;
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
-
   @media (min-width: 640px) {
     main { max-width: 720px; margin: 0 auto; padding: 16px 24px; }
     header { padding: 16px 24px 12px; }
@@ -311,9 +273,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
       </button>
       <div class="menu" id="menu">
-        <button id="exportBtn">📤 Export data</button>
-        <button id="importBtn">📥 Import data</button>
-        <button id="reloadBtn">🔄 Reload from data.json</button>
+        <button id="reloadBtn">🔄 Refresh data</button>
       </div>
     </div>
 
@@ -377,7 +337,7 @@
       <div class="actions">
         <button type="button" class="btn btn-danger" id="deleteBtn" style="display:none">Delete</button>
         <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
-        <button type="submit" class="btn btn-primary">Save</button>
+        <button type="submit" class="btn btn-primary" id="saveBtn">Save</button>
       </div>
     </form>
   </div>
@@ -385,33 +345,149 @@
 
 <div class="toast" id="toast"></div>
 
-<input type="file" id="fileInput" accept="application/json" style="display:none" />
-
 <script>
 (() => {
+  // ========== CONFIGURATION ==========
+  const SPREADSHEET_ID = 'YOUR_SPREADSHEET_ID_HERE'; // ← Paste your sheet ID here
+  const API_KEY = 'YOUR_API_KEY_HERE'; // ← Paste your API key here
+  const SHEET_NAME = 'Sheet1'; // Default sheet name
+  // ===================================
+
   let items = [];
   let currentFilter = 'all';
   let currentSearch = '';
+  let isLoading = false;
 
   const $ = id => document.getElementById(id);
   const listEl = $('list');
   const overlay = $('overlay');
   const sheet = overlay.querySelector('.sheet');
 
-  async function loadDataFromJson() {
+  // Google Sheets API functions
+  async function loadFromSheets() {
     try {
-      const response = await fetch('data.json', { cache: 'no-cache' });
-      if (!response.ok) throw new Error('Failed to load');
+      isLoading = true;
+      render(); // Show loading state
+      
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}!A2:F?key=${API_KEY}`;
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
-      if (!Array.isArray(data)) throw new Error('Invalid format');
-      return data.map(item => ({
-        id: 'i' + Date.now() + Math.random().toString(36).slice(2,6),
-        ...item
+      const rows = data.values || [];
+      
+      items = rows.map((row, index) => ({
+        id: 'row_' + (index + 2), // Row number (A2 = row 2)
+        rowNumber: index + 2,
+        name: row[0] || '',
+        qty: parseInt(row[1]) || 0,
+        min: parseInt(row[2]) || 0,
+        unit: row[3] || '',
+        category: row[4] || '',
+        location: row[5] || ''
       }));
+      
+      isLoading = false;
+      render();
     } catch (err) {
-      console.error('Error loading data.json:', err);
-      toast('Could not load data.json');
-      return [];
+      console.error('Error loading from Sheets:', err);
+      toast('Error loading data: ' + err.message);
+      isLoading = false;
+      render();
+    }
+  }
+
+  async function saveToSheets(item) {
+    try {
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}!A${item.rowNumber}:F${item.rowNumber}?valueInputOption=RAW&key=${API_KEY}`;
+      
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          values: [[
+            item.name,
+            item.qty,
+            item.min,
+            item.unit,
+            item.category,
+            item.location
+          ]]
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      await loadFromSheets(); // Reload to get latest data
+      toast('Saved to Google Sheets');
+    } catch (err) {
+      console.error('Error saving to Sheets:', err);
+      toast('Error saving: ' + err.message);
+    }
+  }
+
+  async function addToSheets(item) {
+    try {
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}!A:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS&key=${API_KEY}`;
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          values: [[
+            item.name,
+            item.qty,
+            item.min,
+            item.unit,
+            item.category,
+            item.location
+          ]]
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      await loadFromSheets(); // Reload to get latest data
+      toast('Added to Google Sheets');
+    } catch (err) {
+      console.error('Error adding to Sheets:', err);
+      toast('Error adding: ' + err.message);
+    }
+  }
+
+  async function deleteFromSheets(item) {
+    // Google Sheets API doesn't have a simple delete row endpoint
+    // We'll clear the row instead
+    try {
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}!A${item.rowNumber}:F${item.rowNumber}:clear?key=${API_KEY}`;
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      await loadFromSheets();
+      toast('Deleted from Google Sheets');
+    } catch (err) {
+      console.error('Error deleting from Sheets:', err);
+      toast('Error deleting: ' + err.message);
     }
   }
 
@@ -420,11 +496,17 @@
     if (item.qty <= item.min) return 'low';
     return 'ok';
   }
+
   function statusLabel(s) {
     return s === 'out' ? 'Out' : s === 'low' ? 'Low' : 'OK';
   }
 
   function render() {
+    if (isLoading) {
+      listEl.innerHTML = '<div class="empty"><h3>Loading...</h3></div>';
+      return;
+    }
+
     let cAll = 0, cOut = 0, cLow = 0, cOk = 0;
     items.forEach(it => {
       cAll++;
@@ -461,7 +543,7 @@
             <path d="M3.3 7 12 12l8.7-5M12 22V12"/>
           </svg>
           <h3>${items.length === 0 ? 'No equipment yet' : 'Nothing matches'}</h3>
-          <p>${items.length === 0 ? 'Waiting for data.json...' : 'Try a different search or filter.'}</p>
+          <p>${items.length === 0 ? 'Add items in Google Sheets or tap + to add' : 'Try a different search or filter.'}</p>
         </div>`;
       return;
     }
@@ -536,7 +618,7 @@
   }
   function closeSheet() { overlay.classList.remove('open'); }
 
-  $('itemForm').addEventListener('submit', e => {
+  $('itemForm').addEventListener('submit', async e => {
     e.preventDefault();
     const id = $('itemId').value;
     const data = {
@@ -548,23 +630,35 @@
       location: $('itemLocation').value.trim(),
     };
     if (!data.name) return;
-    if (id) {
-      const it = items.find(i => i.id === id);
-      Object.assign(it, data);
-      toast('Updated (temporary)');
+    
+    $('saveBtn').disabled = true;
+    $('saveBtn').textContent = 'Saving...';
+    
+    if (id && id.startsWith('row_')) {
+      // Update existing
+      const item = items.find(i => i.id === id);
+      Object.assign(item, data);
+      await saveToSheets(item);
     } else {
-      items.push({ id: 'i' + Date.now() + Math.random().toString(36).slice(2,6), ...data });
-      toast('Added (temporary)');
+      // Add new
+      await addToSheets(data);
     }
-    render(); closeSheet();
+    
+    $('saveBtn').disabled = false;
+    $('saveBtn').textContent = 'Save';
+    closeSheet();
   });
 
-  $('deleteBtn').addEventListener('click', () => {
+  $('deleteBtn').addEventListener('click', async () => {
     const id = $('itemId').value;
-    if (!id) return;
-    if (confirm('Delete this item?')) {
-      items = items.filter(i => i.id !== id);
-      render(); closeSheet(); toast('Deleted (temporary)');
+    if (!id || !id.startsWith('row_')) return;
+    
+    if (confirm('Delete this item from Google Sheets?')) {
+      const item = items.find(i => i.id === id);
+      $('deleteBtn').disabled = true;
+      await deleteFromSheets(item);
+      $('deleteBtn').disabled = false;
+      closeSheet();
     }
   });
 
@@ -577,50 +671,10 @@
     if (!menu.contains(e.target) && e.target !== $('menuBtn')) menu.classList.remove('open');
   });
 
-  $('exportBtn').addEventListener('click', () => {
-    const blob = new Blob([JSON.stringify(items, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `equipment-${new Date().toISOString().slice(0,10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    menu.classList.remove('open');
-    toast('Exported');
-  });
-
-  $('importBtn').addEventListener('click', () => {
-    $('fileInput').click();
-    menu.classList.remove('open');
-  });
-  $('fileInput').addEventListener('change', e => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => {
-      try {
-        const data = JSON.parse(ev.target.result);
-        if (!Array.isArray(data)) throw new Error('bad');
-        if (confirm(`Import ${data.length} items? This will replace current data.`)) {
-          items = data.map(item => ({
-            id: 'i' + Date.now() + Math.random().toString(36).slice(2,6),
-            ...item
-          }));
-          render(); toast('Imported');
-        }
-      } catch { toast('Invalid file'); }
-    };
-    reader.readAsText(file);
-    e.target.value = '';
-  });
-
   $('reloadBtn').addEventListener('click', async () => {
-    const data = await loadDataFromJson();
-    if (data.length > 0) {
-      items = data;
-      render();
-      toast('Reloaded from data.json');
-    }
+    $('reloadBtn').textContent = 'Loading...';
+    await loadFromSheets();
+    $('reloadBtn').textContent = '🔄 Refresh data';
     menu.classList.remove('open');
   });
 
@@ -630,15 +684,21 @@
     t.textContent = msg;
     t.classList.add('show');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => t.classList.remove('show'), 1600);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2000);
   }
 
   async function init() {
-    const data = await loadDataFromJson();
-    if (data.length > 0) {
-      items = data;
+    if (SPREADSHEET_ID === 'YOUR_SPREADSHEET_ID_HERE' || API_KEY === 'YOUR_API_KEY_HERE') {
+      listEl.innerHTML = `
+        <div class="empty">
+          <h3>⚠️ Configuration Required</h3>
+          <p>Edit index.html and add your:<br>
+          • Spreadsheet ID<br>
+          • API Key</p>
+        </div>`;
+      return;
     }
-    render();
+    await loadFromSheets();
   }
 
   init();

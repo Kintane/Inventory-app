@@ -44,7 +44,6 @@
     padding: 14px 16px 10px;
   }
 
-  /* NEW: Container to match main content width */
   .header-content {
     max-width: 720px;
     margin: 0 auto;
@@ -82,7 +81,6 @@
     width: 18px; height: 18px; color: var(--text-faint);
   }
 
-  /* CHANGED: Center the tabs */
   .tabs {
     display: flex; gap: 6px; overflow-x: auto;
     scrollbar-width: none; padding-bottom: 2px;
@@ -109,16 +107,14 @@
 
   main { padding: 12px 16px; }
 
+  /* CHANGED: Compact 2-row cards */
   .item {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 14px;
-    padding: 12px;
-    margin-bottom: 10px;
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 8px 12px;
-    align-items: center;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    cursor: pointer;
     transition: transform 0.1s;
     animation: fadeIn 0.2s ease;
   }
@@ -130,43 +126,35 @@
   .item.status-out { border-color: rgba(255,77,94,0.35); background: linear-gradient(180deg, var(--out-soft), var(--surface)); }
   .item.status-low  { border-color: rgba(255,170,51,0.3);  background: linear-gradient(180deg, var(--low-soft), var(--surface)); }
 
-  .item-main { min-width: 0; }
   .item-name {
-    font-size: 16px; font-weight: 600; margin-bottom: 4px;
+    font-size: 15px; font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 4px;
+  }
+  .item-name-text {
+    flex: 1; min-width: 0;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .item-meta {
     font-size: 13px; color: var(--text-dim);
-    display: flex; gap: 10px; flex-wrap: wrap;
-  }
-  .item-meta span { display: inline-flex; align-items: center; gap: 4px; }
-  .item-meta svg { width: 13px; height: 13px; }
-
-  .qty-controls {
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     display: flex; align-items: center; gap: 6px;
   }
-  .qty-btn {
-    width: 34px; height: 34px; border-radius: 10px;
-    background: var(--surface-2); border: 1px solid var(--border);
-    color: var(--text); font-size: 18px; font-weight: 600;
-    cursor: pointer; display: grid; place-items: center;
-    transition: all 0.15s;
+  .item-meta .sep { color: var(--text-faint); }
+  .item-meta .qty {
+    font-weight: 600;
+    padding: 1px 6px; border-radius: 6px;
   }
-  .qty-btn:active { background: var(--accent-soft); color: var(--accent); }
-  .qty-display {
-    min-width: 56px; text-align: center;
-    font-size: 15px; font-weight: 600;
-    padding: 6px 8px; border-radius: 10px;
-    background: var(--surface-2); border: 1px solid var(--border);
-    cursor: pointer;
-  }
-  .qty-display.out { color: var(--out); background: var(--out-soft); border-color: rgba(255,77,94,0.3); }
-  .qty-display.low { color: var(--low); background: var(--low-soft); border-color: rgba(255,170,51,0.3); }
+  .item-meta .qty.out { color: var(--out); background: var(--out-soft); }
+  .item-meta .qty.low { color: var(--low); background: var(--low-soft); }
+  .item-meta .qty.ok  { color: var(--ok);  background: var(--ok-soft); }
 
   .badge {
-    display: inline-block; font-size: 11px; font-weight: 600;
-    padding: 2px 8px; border-radius: 999px; margin-left: 8px;
+    display: inline-block; font-size: 10px; font-weight: 600;
+    padding: 2px 7px; border-radius: 999px;
     vertical-align: middle; text-transform: uppercase; letter-spacing: 0.5px;
+    flex-shrink: 0;
   }
   .badge.out { background: var(--out-soft); color: var(--out); }
   .badge.low { background: var(--low-soft); color: var(--low); }
@@ -192,7 +180,6 @@
   .fab:active { transform: scale(0.94); }
   .fab svg { width: 26px; height: 26px; }
 
-  /* Modal / bottom sheet */
   .overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.6);
     z-index: 50; display: none; align-items: flex-end; justify-content: center;
@@ -248,7 +235,6 @@
   .btn-secondary { background: var(--surface-2); color: var(--text); }
   .btn-danger { background: var(--out-soft); color: var(--out); border-color: rgba(255,77,94,0.3); }
 
-  /* Menu */
   .menu {
     position: absolute; top: 58px; right: 0;
     background: var(--surface); border: 1px solid var(--border);
@@ -293,7 +279,7 @@
       <div class="menu" id="menu">
         <button id="exportBtn">📤 Export data</button>
         <button id="importBtn">📥 Import data</button>
-        <button id="sampleBtn">✨ Load sample items</button>
+        <button id="reloadBtn">🔄 Reload from data.json</button>
         <button id="clearBtn" class="danger">🗑 Clear all</button>
       </div>
     </div>
@@ -318,7 +304,6 @@
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
 </button>
 
-<!-- Add/Edit sheet -->
 <div class="overlay" id="overlay">
   <div class="sheet">
     <div class="sheet-handle"></div>
@@ -380,7 +365,23 @@
   const listEl = $('list');
   const overlay = $('overlay');
 
-  // ---------- Persistence ----------
+  async function loadDataFromJson() {
+    try {
+      const response = await fetch('data.json');
+      if (!response.ok) throw new Error('Failed to load');
+      const data = await response.json();
+      if (!Array.isArray(data)) throw new Error('Invalid format');
+      return data.map(item => ({
+        id: 'i' + Date.now() + Math.random().toString(36).slice(2,6),
+        ...item
+      }));
+    } catch (err) {
+      console.error('Error loading data.json:', err);
+      toast('Could not load data.json');
+      return [];
+    }
+  }
+
   function load() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -391,19 +392,16 @@
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   }
 
-  // ---------- Status ----------
   function statusOf(item) {
     if (item.qty <= 0) return 'out';
     if (item.qty <= item.min) return 'low';
     return 'ok';
   }
   function statusLabel(s) {
-    return s === 'out' ? 'Out of stock' : s === 'low' ? 'Running low' : 'OK';
+    return s === 'out' ? 'Out' : s === 'low' ? 'Low' : 'OK';
   }
 
-  // ---------- Render ----------
   function render() {
-    // Counts
     let cAll = 0, cOut = 0, cLow = 0, cOk = 0;
     items.forEach(it => {
       cAll++;
@@ -417,7 +415,6 @@
     $('count-low').textContent = cLow;
     $('count-ok').textContent = cOk;
 
-    // Filter + search
     const q = currentSearch.trim().toLowerCase();
     let filtered = items.filter(it => {
       if (currentFilter !== 'all' && statusOf(it) !== currentFilter) return false;
@@ -426,7 +423,6 @@
         .toLowerCase().includes(q);
     });
 
-    // Sort: out first, then low, then ok; alphabetical within
     const order = { out: 0, low: 1, ok: 2 };
     filtered.sort((a,b) => {
       const sa = order[statusOf(a)], sb = order[statusOf(b)];
@@ -450,25 +446,20 @@
     listEl.innerHTML = filtered.map(it => {
       const s = statusOf(it);
       const unit = it.unit ? ` ${it.unit}` : '';
+      
+      // Build compact meta: qty/min · category · location
       const metaParts = [];
-      if (it.category) metaParts.push(`<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg>${escapeHtml(it.category)}</span>`);
-      if (it.location) metaParts.push(`<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s-8-7.5-8-13a8 8 0 1 1 16 0c0 5.5-8 13-8 13z"/><circle cx="12" cy="9" r="2.5"/></svg>${escapeHtml(it.location)}</span>`);
-      metaParts.push(`<span>Min: ${it.min}${unit}</span>`);
+      metaParts.push(`<span class="qty ${s}">${it.qty}/${it.min}${unit}</span>`);
+      if (it.category) metaParts.push(`<span class="sep">·</span><span>${escapeHtml(it.category)}</span>`);
+      if (it.location) metaParts.push(`<span class="sep">·</span><span>${escapeHtml(it.location)}</span>`);
 
       return `
         <div class="item status-${s}" data-id="${it.id}">
-          <div class="item-main" data-action="edit">
-            <div class="item-name">
-              ${escapeHtml(it.name)}
-              <span class="badge ${s}">${statusLabel(s)}</span>
-            </div>
-            <div class="item-meta">${metaParts.join('')}</div>
+          <div class="item-name">
+            <span class="item-name-text">${escapeHtml(it.name)}</span>
+            <span class="badge ${s}">${statusLabel(s)}</span>
           </div>
-          <div class="qty-controls">
-            <button class="qty-btn" data-action="dec" aria-label="Decrease">−</button>
-            <div class="qty-display ${s}" data-action="edit" title="Tap to edit">${it.qty}${unit}</div>
-            <button class="qty-btn" data-action="inc" aria-label="Increase">+</button>
-          </div>
+          <div class="item-meta">${metaParts.join('')}</div>
         </div>`;
     }).join('');
   }
@@ -477,26 +468,16 @@
     return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
 
-  // ---------- Events ----------
+  // CHANGED: Tap anywhere on card opens edit (no +/- buttons)
   listEl.addEventListener('click', e => {
     const itemEl = e.target.closest('.item');
     if (!itemEl) return;
     const id = itemEl.dataset.id;
-    const action = e.target.closest('[data-action]')?.dataset.action;
     const item = items.find(i => i.id === id);
     if (!item) return;
-
-    if (action === 'inc') {
-      item.qty++;
-      save(); render(); toast(`${item.name}: ${item.qty}`);
-    } else if (action === 'dec') {
-      if (item.qty > 0) { item.qty--; save(); render(); toast(`${item.name}: ${item.qty}`); }
-    } else {
-      openEdit(item);
-    }
+    openEdit(item);
   });
 
-  // Tabs
   $('tabs').addEventListener('click', e => {
     const tab = e.target.closest('.tab');
     if (!tab) return;
@@ -506,16 +487,13 @@
     render();
   });
 
-  // Search
   $('search').addEventListener('input', e => {
     currentSearch = e.target.value;
     render();
   });
 
-  // Add button
   $('addBtn').addEventListener('click', () => openEdit(null));
 
-  // Sheet close
   $('closeSheet').addEventListener('click', closeSheet);
   $('cancelBtn').addEventListener('click', closeSheet);
   overlay.addEventListener('click', e => { if (e.target === overlay) closeSheet(); });
@@ -530,12 +508,15 @@
     $('itemCategory').value = item ? (item.category || '') : '';
     $('itemLocation').value = item ? (item.location || '') : '';
     $('deleteBtn').style.display = item ? 'block' : 'none';
+    
+    // CHANGED: Scroll to top before opening sheet so keyboard doesn't block fields
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    
     overlay.classList.add('open');
-    setTimeout(() => $('itemName').focus(), 200);
+    setTimeout(() => $('itemName').focus(), 250);
   }
   function closeSheet() { overlay.classList.remove('open'); }
 
-  // Save
   $('itemForm').addEventListener('submit', e => {
     e.preventDefault();
     const id = $('itemId').value;
@@ -559,7 +540,6 @@
     save(); render(); closeSheet();
   });
 
-  // Delete
   $('deleteBtn').addEventListener('click', () => {
     const id = $('itemId').value;
     if (!id) return;
@@ -569,7 +549,6 @@
     }
   });
 
-  // Menu
   const menu = $('menu');
   $('menuBtn').addEventListener('click', e => {
     e.stopPropagation();
@@ -604,7 +583,10 @@
         const data = JSON.parse(ev.target.result);
         if (!Array.isArray(data)) throw new Error('bad');
         if (confirm(`Import ${data.length} items? This will replace current data.`)) {
-          items = data;
+          items = data.map(item => ({
+            id: 'i' + Date.now() + Math.random().toString(36).slice(2,6),
+            ...item
+          }));
           save(); render(); toast('Imported');
         }
       } catch { toast('Invalid file'); }
@@ -613,19 +595,15 @@
     e.target.value = '';
   });
 
-  $('sampleBtn').addEventListener('click', () => {
-    if (items.length > 0 && !confirm('This will add sample items to your list. Continue?')) return;
-    const samples = [
-      { name: 'Safety gloves', qty: 0, min: 10, unit: 'pairs', category: 'PPE', location: 'Shelf A1' },
-      { name: 'Hard hats', qty: 3, min: 8, unit: 'pcs', category: 'PPE', location: 'Shelf A2' },
-      { name: 'Safety goggles', qty: 25, min: 10, unit: 'pcs', category: 'PPE', location: 'Shelf A2' },
-      { name: 'Cable ties', qty: 2, min: 5, unit: 'packs', category: 'Consumables', location: 'Storage B' },
-      { name: 'Drill bits set', qty: 4, min: 2, unit: 'sets', category: 'Tools', location: 'Tool room' },
-      { name: 'Work lamps', qty: 1, min: 3, unit: 'pcs', category: 'Equipment', location: 'Shelf C4' },
-      { name: 'First aid kit', qty: 0, min: 1, unit: 'pcs', category: 'Safety', location: 'Office' },
-    ];
-    samples.forEach(s => items.push({ id: 'i' + Date.now() + Math.random().toString(36).slice(2,6), ...s }));
-    save(); render(); menu.classList.remove('open'); toast('Samples added');
+  $('reloadBtn').addEventListener('click', async () => {
+    if (!confirm('Reload all equipment from data.json? This will replace current data.')) return;
+    const data = await loadDataFromJson();
+    if (data.length > 0) {
+      items = data;
+      save(); render();
+      toast('Reloaded from data.json');
+    }
+    menu.classList.remove('open');
   });
 
   $('clearBtn').addEventListener('click', () => {
@@ -635,7 +613,6 @@
     }
   });
 
-  // Toast
   let toastTimer;
   function toast(msg) {
     const t = $('toast');
@@ -645,21 +622,19 @@
     toastTimer = setTimeout(() => t.classList.remove('show'), 1600);
   }
 
-  // Init
-  load();
-  if (items.length === 0) {
-    // Auto-load samples on first visit so the UI isn't empty
-    const samples = [
-      { name: 'Safety gloves', qty: 0, min: 10, unit: 'pairs', category: 'PPE', location: 'Shelf A1' },
-      { name: 'Hard hats', qty: 3, min: 8, unit: 'pcs', category: 'PPE', location: 'Shelf A2' },
-      { name: 'Safety goggles', qty: 25, min: 10, unit: 'pcs', category: 'PPE', location: 'Shelf A2' },
-      { name: 'Cable ties', qty: 2, min: 5, unit: 'packs', category: 'Consumables', location: 'Storage B' },
-      { name: 'Drill bits set', qty: 4, min: 2, unit: 'sets', category: 'Tools', location: 'Tool room' },
-    ];
-    samples.forEach(s => items.push({ id: 'i' + Date.now() + Math.random().toString(36).slice(2,6), ...s }));
-    save();
+  async function init() {
+    load();
+    if (items.length === 0) {
+      const data = await loadDataFromJson();
+      if (data.length > 0) {
+        items = data;
+        save();
+      }
+    }
+    render();
   }
-  render();
+
+  init();
 })();
 </script>
 </body>

@@ -6,7 +6,6 @@
 <meta name="theme-color" content="#0b0b0e" />
 <title>Equipment Tracker</title>
 <style>
-  /* [All your existing CSS stays the same] */
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   :root {
     --bg: #0b0b0e;
@@ -231,6 +230,7 @@
   }
   .btn-primary { background: var(--accent); color: white; border-color: var(--accent); }
   .btn-primary:active { opacity: 0.85; }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
   .btn-secondary { background: var(--surface-2); color: var(--text); }
   .btn-danger { background: var(--out-soft); color: var(--out); border-color: rgba(255,77,94,0.3); }
   .menu {
@@ -247,7 +247,6 @@
     border-radius: 8px;
   }
   .menu button:active { background: var(--surface-2); }
-  .menu button.danger { color: var(--out); }
   .toast {
     position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
     background: var(--surface-2); color: var(--text);
@@ -348,9 +347,7 @@
 <script>
 (() => {
   // ========== CONFIGURATION ==========
-  const SPREADSHEET_ID = '1HgiVbcwwykCyhGJNkCOk0Zw4m9GqmiA2LOeqr3NGdLQ'; // ← Paste your sheet ID here
-  const API_KEY = 'AIzaSyB_7LLmBkhEUnkp9-R6POFHvL7Rewv6UGo'; // ← Paste your API key here
-  const SHEET_NAME = 'Equipment tracker'; // Default sheet name
+  const APPS_SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE'; // ← Paste your Apps Script URL here
   // ===================================
 
   let items = [];
@@ -363,31 +360,27 @@
   const overlay = $('overlay');
   const sheet = overlay.querySelector('.sheet');
 
-  // Google Sheets API functions
+  // Google Apps Script API functions
   async function loadFromSheets() {
     try {
       isLoading = true;
-      render(); // Show loading state
+      render();
       
-      const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}!A2:F?key=${API_KEY}`;
-      const response = await fetch(url);
+      const response = await fetch(APPS_SCRIPT_URL);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const data = await response.json();
-      const rows = data.values || [];
       
-      items = rows.map((row, index) => ({
-        id: 'row_' + (index + 2), // Row number (A2 = row 2)
-        rowNumber: index + 2,
-        name: row[0] || '',
-        qty: parseInt(row[1]) || 0,
-        min: parseInt(row[2]) || 0,
-        unit: row[3] || '',
-        category: row[4] || '',
-        location: row[5] || ''
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      
+      items = data.map(item => ({
+        id: 'row_' + item.rowNumber,
+        ...item
       }));
       
       isLoading = false;
@@ -402,22 +395,20 @@
 
   async function saveToSheets(item) {
     try {
-      const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}!A${item.rowNumber}:F${item.rowNumber}?valueInputOption=RAW&key=${API_KEY}`;
-      
-      const response = await fetch(url, {
-        method: 'PUT',
+      const response = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'text/plain;charset=utf-8',
         },
         body: JSON.stringify({
-          values: [[
-            item.name,
-            item.qty,
-            item.min,
-            item.unit,
-            item.category,
-            item.location
-          ]]
+          action: 'update',
+          row: item.rowNumber,
+          name: item.name,
+          qty: item.qty,
+          min: item.min,
+          unit: item.unit,
+          category: item.category,
+          location: item.location
         })
       });
       
@@ -425,8 +416,14 @@
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      await loadFromSheets(); // Reload to get latest data
-      toast('Saved to Google Sheets');
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.message);
+      }
+      
+      await loadFromSheets();
+      toast('Saved successfully');
     } catch (err) {
       console.error('Error saving to Sheets:', err);
       toast('Error saving: ' + err.message);
@@ -435,22 +432,19 @@
 
   async function addToSheets(item) {
     try {
-      const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}!A:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS&key=${API_KEY}`;
-      
-      const response = await fetch(url, {
+      const response = await fetch(APPS_SCRIPT_URL, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'text/plain;charset=utf-8',
         },
         body: JSON.stringify({
-          values: [[
-            item.name,
-            item.qty,
-            item.min,
-            item.unit,
-            item.category,
-            item.location
-          ]]
+          action: 'add',
+          name: item.name,
+          qty: item.qty,
+          min: item.min,
+          unit: item.unit,
+          category: item.category,
+          location: item.location
         })
       });
       
@@ -458,8 +452,14 @@
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      await loadFromSheets(); // Reload to get latest data
-      toast('Added to Google Sheets');
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.message);
+      }
+      
+      await loadFromSheets();
+      toast('Added successfully');
     } catch (err) {
       console.error('Error adding to Sheets:', err);
       toast('Error adding: ' + err.message);
@@ -467,24 +467,30 @@
   }
 
   async function deleteFromSheets(item) {
-    // Google Sheets API doesn't have a simple delete row endpoint
-    // We'll clear the row instead
     try {
-      const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}!A${item.rowNumber}:F${item.rowNumber}:clear?key=${API_KEY}`;
-      
-      const response = await fetch(url, {
+      const response = await fetch(APPS_SCRIPT_URL, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-        }
+          'Content-Type': 'text/plain;charset=utf-8',
+        },
+        body: JSON.stringify({
+          action: 'delete',
+          row: item.rowNumber
+        })
       });
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.message);
+      }
+      
       await loadFromSheets();
-      toast('Deleted from Google Sheets');
+      toast('Deleted successfully');
     } catch (err) {
       console.error('Error deleting from Sheets:', err);
       toast('Error deleting: ' + err.message);
@@ -635,12 +641,10 @@
     $('saveBtn').textContent = 'Saving...';
     
     if (id && id.startsWith('row_')) {
-      // Update existing
       const item = items.find(i => i.id === id);
       Object.assign(item, data);
       await saveToSheets(item);
     } else {
-      // Add new
       await addToSheets(data);
     }
     
@@ -688,13 +692,11 @@
   }
 
   async function init() {
-    if (SPREADSHEET_ID === 'YOUR_SPREADSHEET_ID_HERE' || API_KEY === 'YOUR_API_KEY_HERE') {
+    if (APPS_SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbwKtyJJQkP0hV63zhTwnBX_zWJEZfu5Yp6IDr0JsyUEWXYECLqbDfKaJr_r9JSs12bh/exec') {
       listEl.innerHTML = `
         <div class="empty">
           <h3>⚠️ Configuration Required</h3>
-          <p>Edit index.html and add your:<br>
-          • Spreadsheet ID<br>
-          • API Key</p>
+          <p>Edit index.html and add your Apps Script URL</p>
         </div>`;
       return;
     }

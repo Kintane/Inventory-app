@@ -744,16 +744,7 @@
   }
 
   // ---------- Init ----------
-  async function init() {
-    // Check if URL looks like a valid Apps Script deployment
-    if (!APPS_SCRIPT_URL || !APPS_SCRIPT_URL.includes('/macros/s/') || !APPS_SCRIPT_URL.includes('/exec')) {
-      listEl.innerHTML = `
-        <div class="empty">
-          <h3>⚠️ Configuration Required</h3>
-          <p>Edit index.html and add your Apps Script URL</p>
-        </div>`;
-      return;
-    }
+    async function init() {
     await loadAll(true);
   }
 

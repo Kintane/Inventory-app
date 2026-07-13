@@ -513,6 +513,9 @@
       return;
     }
 
+    // Filter out any items without valid names
+    items = items.filter(item => item && item.name && item.name.trim() !== '');
+
     let cAll = 0, cOut = 0, cLow = 0, cOk = 0;
     items.forEach(it => {
       cAll++;
@@ -538,7 +541,10 @@
     filtered.sort((a,b) => {
       const sa = order[statusOf(a)], sb = order[statusOf(b)];
       if (sa !== sb) return sa - sb;
-      return a.name.localeCompare(b.name);
+      // Defensive check for undefined names
+      const nameA = (a.name || '').toString();
+      const nameB = (b.name || '').toString();
+      return nameA.localeCompare(nameB);
     });
 
     if (filtered.length === 0) {

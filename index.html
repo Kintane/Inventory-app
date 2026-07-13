@@ -256,27 +256,13 @@
     transition: opacity 0.2s, transform 0.2s;
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
-  
-  /* Sync indicator */
-  .sync-indicator {
-    position: fixed; top: 8px; left: 50%; transform: translateX(-50%);
-    background: var(--surface-2); color: var(--text-dim);
-    padding: 4px 12px; border-radius: 999px;
-    border: 1px solid var(--border); font-size: 12px;
-    z-index: 100; opacity: 0; pointer-events: none;
-    transition: opacity 0.3s;
-    display: flex; align-items: center; gap: 6px;
+  .last-updated {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-faint);
+    padding: 8px;
+    margin-top: 4px;
   }
-  .sync-indicator.show { opacity: 1; }
-  .sync-indicator .spinner {
-    width: 10px; height: 10px;
-    border: 2px solid var(--text-faint);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  
   @media (min-width: 640px) {
     main { max-width: 720px; margin: 0 auto; padding: 16px 24px; }
     header { padding: 16px 24px 12px; }
@@ -363,71 +349,62 @@
   </div>
 </div>
 
-<div class="sync-indicator" id="syncIndicator">
-  <div class="spinner"></div>
-  <span id="syncText">Syncing...</span>
-</div>
-
 <div class="toast" id="toast"></div>
 
 <script>
 (() => {
   // ========== CONFIGURATION ==========
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwKtyJJQkP0hV63zhTwnBX_zWJEZfu5Yp6IDr0JsyUEWXYECLqbDfKaJr_r9JSs12bh/exec'; // ← Paste your Apps Script URL here
-  const CACHE_KEY = 'equipment_cache_v1';
-  const CACHE_MAX_AGE = 5 * 60 * 1000; // 5 minutes
+  const APPS_SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE';
+  const CACHE_KEY = 'equipment_cache_v2';
+  const CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours - much longer!
   // ===================================
 
   let items = [];
   let currentFilter = 'all';
   let currentSearch = '';
-  let isSyncing = false;
+  let lastUpdateTime = null;
 
   const $ = id => document.getElementById(id);
   const listEl = $('list');
   const overlay = $('overlay');
   const sheet = overlay.querySelector('.sheet');
 
-  // ---------- Cache helpers ----------
+  // ---------- Cache ----------
   function loadCache() {
     try {
       const raw = localStorage.getItem(CACHE_KEY);
       if (!raw) return null;
-      const data = JSON.parse(raw);
-      // Check if cache is too old
-      if (Date.now() - data.timestamp > CACHE_MAX_AGE) {
-        return { items: data.items, stale: true };
-      }
-      return { items: data.items, stale: false };
+      return JSON.parse(raw);
     } catch { return null; }
   }
 
-  function saveCache(itemsToCache) {
+  function saveCache(itemsToCache, timestamp) {
     try {
       localStorage.setItem(CACHE_KEY, JSON.stringify({
         items: itemsToCache,
-        timestamp: Date.now()
+        timestamp: timestamp || Date.now()
       }));
     } catch (e) { console.warn('Cache save failed:', e); }
   }
 
-  // ---------- Sync indicator ----------
-  function showSync(text = 'Syncing...') {
-    $('syncText').textContent = text;
-    $('syncIndicator').classList.add('show');
-  }
-  function hideSync() {
-    $('syncIndicator').classList.remove('show');
+  function formatTimeAgo(timestamp) {
+    const seconds = Math.floor((Date.now() - timestamp) / 1000);
+    if (seconds < 60) return 'just now';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
   }
 
-  // ---------- API functions ----------
+  // ---------- API ----------
   async function parseResponse(response) {
     const text = await response.text();
     try {
       return JSON.parse(text);
     } catch (e) {
-      console.error('Failed to parse JSON:', text);
-      throw new Error('Invalid response from server');
+      throw new Error('Invalid response');
     }
   }
 
@@ -436,7 +413,7 @@
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await parseResponse(response);
     if (data.error) throw new Error(data.error);
-    if (!Array.isArray(data)) throw new Error('Invalid data format');
+    if (!Array.isArray(data)) throw new Error('Invalid data');
     return data.map(item => ({
       id: 'row_' + item.rowNumber,
       ...item
@@ -450,94 +427,80 @@
     });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const result = await parseResponse(response);
-    if (!result.success) throw new Error(result.message || 'Request failed');
+    if (!result.success) throw new Error(result.message || 'Failed');
     return result;
   }
 
-  // ---------- Main load flow ----------
-  async function loadAll() {
-    // 1. Show cached data INSTANTLY
+  // ---------- Load ----------
+  async function loadAll(silent = false) {
+    // Always show cache first (instant)
     const cached = loadCache();
-    if (cached && cached.items.length > 0) {
+    if (cached && cached.items) {
       items = cached.items;
+      lastUpdateTime = cached.timestamp;
       render();
-      if (!cached.stale) {
-        // Cache is fresh, no need to fetch
-        return;
-      }
     }
 
-    // 2. Fetch fresh data in background
+    // If cache is fresh enough, don't fetch
+    if (cached && cached.timestamp && (Date.now() - cached.timestamp) < CACHE_MAX_AGE) {
+      return;
+    }
+
+    // Fetch in background (silent, no indicator)
     try {
-      showSync('Syncing...');
       const freshItems = await fetchFromSheets();
       items = freshItems;
-      saveCache(items);
+      lastUpdateTime = Date.now();
+      saveCache(items, lastUpdateTime);
       render();
-      hideSync();
+      if (!silent) toast('Data refreshed');
     } catch (err) {
-      console.error('Sync failed:', err);
-      hideSync();
-      if (items.length === 0) {
-        toast('Could not load data: ' + err.message);
-      } else {
-        toast('Using cached data (sync failed)');
+      console.error('Background fetch failed:', err);
+      if (items.length === 0 && !silent) {
+        toast('Could not load: ' + err.message);
       }
     }
   }
 
-  // ---------- Optimistic mutations ----------
+  // ---------- Mutations ----------
   async function addItem(data) {
-    // Create temporary item with local ID
     const tempItem = {
       id: 'temp_' + Date.now(),
       rowNumber: null,
       ...data
     };
     
-    // Optimistic: add to UI immediately
     items.push(tempItem);
     saveCache(items);
     render();
     toast('Added');
     
-    // Sync in background
     try {
-      showSync('Saving...');
       await postToSheets({ action: 'add', ...data });
-      // Reload fresh data to get real row numbers
       const freshItems = await fetchFromSheets();
       items = freshItems;
-      saveCache(items);
+      lastUpdateTime = Date.now();
+      saveCache(items, lastUpdateTime);
       render();
-      hideSync();
     } catch (err) {
-      hideSync();
-      toast('Save failed: ' + err.message);
+      toast('Sync failed: ' + err.message);
     }
   }
 
   async function updateItem(item, data) {
     const original = { ...item };
-    
-    // Optimistic: update UI immediately
     Object.assign(item, data);
     saveCache(items);
     render();
     toast('Updated');
     
-    // Sync in background
     try {
-      showSync('Saving...');
       await postToSheets({
         action: 'update',
         row: item.rowNumber,
         ...data
       });
-      hideSync();
     } catch (err) {
-      hideSync();
-      // Rollback on failure
       Object.assign(item, original);
       saveCache(items);
       render();
@@ -547,21 +510,14 @@
 
   async function deleteItem(item) {
     const originalItems = [...items];
-    
-    // Optimistic: remove from UI immediately
     items = items.filter(i => i.id !== item.id);
     saveCache(items);
     render();
     toast('Deleted');
     
-    // Sync in background
     try {
-      showSync('Deleting...');
       await postToSheets({ action: 'delete', row: item.rowNumber });
-      hideSync();
     } catch (err) {
-      hideSync();
-      // Rollback
       items = originalItems;
       saveCache(items);
       render();
@@ -569,7 +525,7 @@
     }
   }
 
-  // ---------- Status & render ----------
+  // ---------- Render ----------
   function statusOf(item) {
     if (item.qty <= 0) return 'out';
     if (item.qty <= item.min) return 'low';
@@ -612,8 +568,9 @@
       return nameA.localeCompare(nameB);
     });
 
+    let html = '';
     if (filtered.length === 0) {
-      listEl.innerHTML = `
+      html = `
         <div class="empty">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
@@ -622,25 +579,31 @@
           <h3>${items.length === 0 ? 'No equipment yet' : 'Nothing matches'}</h3>
           <p>${items.length === 0 ? 'Tap + to add your first item' : 'Try a different search or filter.'}</p>
         </div>`;
-      return;
+    } else {
+      html = filtered.map(it => {
+        const s = statusOf(it);
+        const unit = it.unit ? ` ${it.unit}` : '';
+        const metaParts = [];
+        metaParts.push(`<span class="qty ${s}">${it.qty}/${it.min}${unit}</span>`);
+        if (it.category) metaParts.push(`<span class="sep">·</span><span>${escapeHtml(it.category)}</span>`);
+        if (it.location) metaParts.push(`<span class="sep">·</span><span>${escapeHtml(it.location)}</span>`);
+        return `
+          <div class="item status-${s}" data-id="${it.id}">
+            <div class="item-name">
+              <span class="item-name-text">${escapeHtml(it.name)}</span>
+              <span class="badge ${s}">${statusLabel(s)}</span>
+            </div>
+            <div class="item-meta">${metaParts.join('')}</div>
+          </div>`;
+      }).join('');
     }
 
-    listEl.innerHTML = filtered.map(it => {
-      const s = statusOf(it);
-      const unit = it.unit ? ` ${it.unit}` : '';
-      const metaParts = [];
-      metaParts.push(`<span class="qty ${s}">${it.qty}/${it.min}${unit}</span>`);
-      if (it.category) metaParts.push(`<span class="sep">·</span><span>${escapeHtml(it.category)}</span>`);
-      if (it.location) metaParts.push(`<span class="sep">·</span><span>${escapeHtml(it.location)}</span>`);
-      return `
-        <div class="item status-${s}" data-id="${it.id}">
-          <div class="item-name">
-            <span class="item-name-text">${escapeHtml(it.name)}</span>
-            <span class="badge ${s}">${statusLabel(s)}</span>
-          </div>
-          <div class="item-meta">${metaParts.join('')}</div>
-        </div>`;
-    }).join('');
+    // Add last updated timestamp
+    if (lastUpdateTime) {
+      html += `<div class="last-updated">Last updated: ${formatTimeAgo(lastUpdateTime)}</div>`;
+    }
+
+    listEl.innerHTML = html;
   }
 
   function escapeHtml(s) {
@@ -740,16 +703,15 @@
 
   $('reloadBtn').addEventListener('click', async () => {
     menu.classList.remove('open');
+    toast('Refreshing...');
     try {
-      showSync('Refreshing...');
       const freshItems = await fetchFromSheets();
       items = freshItems;
-      saveCache(items);
+      lastUpdateTime = Date.now();
+      saveCache(items, lastUpdateTime);
       render();
-      hideSync();
       toast('Refreshed');
     } catch (err) {
-      hideSync();
       toast('Refresh failed: ' + err.message);
     }
   });
@@ -765,7 +727,7 @@
 
   // ---------- Init ----------
   async function init() {
-    if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+    if (APPS_SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbwKtyJJQkP0hV63zhTwnBX_zWJEZfu5Yp6IDr0JsyUEWXYECLqbDfKaJr_r9JSs12bh/exec') {
       listEl.innerHTML = `
         <div class="empty">
           <h3>⚠️ Configuration Required</h3>
@@ -773,7 +735,7 @@
         </div>`;
       return;
     }
-    await loadAll();
+    await loadAll(true); // silent load
   }
 
   init();

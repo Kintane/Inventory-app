@@ -693,13 +693,19 @@
     }
   });
 
-  $('deleteBtn').addEventListener('click', async () => {
+    $('deleteBtn').addEventListener('click', () => {
     const id = $('itemId').value;
     if (!id || !id.startsWith('row_')) return;
     if (confirm('Delete this item?')) {
       const item = items.find(i => i.id === id);
-      await deleteItem(item);
+      
+      // 1. Close the sheet immediately for instant UI feedback
       closeSheet();
+      
+      // 2. Trigger background delete (fire-and-forget)
+      // The deleteItem function already handles optimistic UI removal 
+      // and background syncing with built-in error handling/rollback.
+      deleteItem(item);
     }
   });
 

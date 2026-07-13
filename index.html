@@ -745,7 +745,8 @@
 
   // ---------- Init ----------
   async function init() {
-    if (APPS_SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbwKtyJJQkP0hV63zhTwnBX_zWJEZfu5Yp6IDr0JsyUEWXYECLqbDfKaJr_r9JSs12bh/exec') {
+    // Check if URL looks like a valid Apps Script deployment
+    if (!APPS_SCRIPT_URL || !APPS_SCRIPT_URL.includes('/macros/s/') || !APPS_SCRIPT_URL.includes('/exec')) {
       listEl.innerHTML = `
         <div class="empty">
           <h3>⚠️ Configuration Required</h3>

@@ -666,7 +666,7 @@
   }
   function closeSheet() { overlay.classList.remove('open'); }
 
-  $('itemForm').addEventListener('submit', async e => {
+    $('itemForm').addEventListener('submit', e => {
     e.preventDefault();
     const id = $('itemId').value;
     const data = {
@@ -679,19 +679,18 @@
     };
     if (!data.name) return;
     
-    $('saveBtn').disabled = true;
-    $('saveBtn').textContent = 'Saving...';
+    // 1. Close the sheet immediately for instant UI feedback
+    closeSheet();
     
+    // 2. Trigger background save (fire-and-forget)
+    // The functions below already handle optimistic UI updates and 
+    // background syncing with built-in error handling/toasts.
     if (id && id.startsWith('row_')) {
       const item = items.find(i => i.id === id);
-      await updateItem(item, data);
+      updateItem(item, data); // No await
     } else {
-      await addItem(data);
+      addItem(data); // No await
     }
-    
-    $('saveBtn').disabled = false;
-    $('saveBtn').textContent = 'Save';
-    closeSheet();
   });
 
   $('deleteBtn').addEventListener('click', async () => {

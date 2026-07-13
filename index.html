@@ -356,13 +356,14 @@
   // ========== CONFIGURATION ==========
   const APPS_SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE';
   const CACHE_KEY = 'equipment_cache_v2';
-  const CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours - much longer!
+  const CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
   // ===================================
 
   let items = [];
   let currentFilter = 'all';
   let currentSearch = '';
   let lastUpdateTime = null;
+  let nextRowNumber = 2; // Start at row 2 (after header)
 
   const $ = id => document.getElementById(id);
   const listEl = $('list');
@@ -438,6 +439,8 @@
     if (cached && cached.items) {
       items = cached.items;
       lastUpdateTime = cached.timestamp;
+      // Calculate next row number
+      nextRowNumber = Math.max(...items.map(i => i.rowNumber || 0), 1) + 1;
       render();
     }
 
@@ -451,6 +454,7 @@
       const freshItems = await fetchFromSheets();
       items = freshItems;
       lastUpdateTime = Date.now();
+      nextRowNumber = Math.max(...items.map(i => i.rowNumber || 0), 1) + 1;
       saveCache(items, lastUpdateTime);
       render();
       if (!silent) toast('Data refreshed');
@@ -462,38 +466,40 @@
     }
   }
 
-  // ---------- Mutations ----------
+  // ---------- Mutations (INSTANT, no refetch) ----------
   async function addItem(data) {
-    const tempItem = {
-      id: 'temp_' + Date.now(),
-      rowNumber: null,
+    const newItem = {
+      id: 'row_' + nextRowNumber,
+      rowNumber: nextRowNumber,
       ...data
     };
     
-    items.push(tempItem);
+    // Add to UI immediately
+    items.push(newItem);
+    nextRowNumber++;
     saveCache(items);
     render();
     toast('Added');
     
+    // Sync to Google Sheets in background (fire and forget)
     try {
       await postToSheets({ action: 'add', ...data });
-      const freshItems = await fetchFromSheets();
-      items = freshItems;
-      lastUpdateTime = Date.now();
-      saveCache(items, lastUpdateTime);
-      render();
     } catch (err) {
-      toast('Sync failed: ' + err.message);
+      console.error('Sync failed:', err);
+      toast('Sync failed (saved locally)');
     }
   }
 
   async function updateItem(item, data) {
     const original = { ...item };
+    
+    // Update UI immediately
     Object.assign(item, data);
     saveCache(items);
     render();
     toast('Updated');
     
+    // Sync to Google Sheets in background
     try {
       await postToSheets({
         action: 'update',
@@ -501,27 +507,34 @@
         ...data
       });
     } catch (err) {
+      console.error('Sync failed:', err);
+      // Rollback
       Object.assign(item, original);
       saveCache(items);
       render();
-      toast('Save failed: ' + err.message);
+      toast('Save failed');
     }
   }
 
   async function deleteItem(item) {
     const originalItems = [...items];
+    
+    // Remove from UI immediately
     items = items.filter(i => i.id !== item.id);
     saveCache(items);
     render();
     toast('Deleted');
     
+    // Sync to Google Sheets in background
     try {
       await postToSheets({ action: 'delete', row: item.rowNumber });
     } catch (err) {
+      console.error('Sync failed:', err);
+      // Rollback
       items = originalItems;
       saveCache(items);
       render();
-      toast('Delete failed: ' + err.message);
+      toast('Delete failed');
     }
   }
 
@@ -598,7 +611,6 @@
       }).join('');
     }
 
-    // Add last updated timestamp
     if (lastUpdateTime) {
       html += `<div class="last-updated">Last updated: ${formatTimeAgo(lastUpdateTime)}</div>`;
     }
@@ -708,6 +720,7 @@
       const freshItems = await fetchFromSheets();
       items = freshItems;
       lastUpdateTime = Date.now();
+      nextRowNumber = Math.max(...items.map(i => i.rowNumber || 0), 1) + 1;
       saveCache(items, lastUpdateTime);
       render();
       toast('Refreshed');
@@ -735,7 +748,7 @@
         </div>`;
       return;
     }
-    await loadAll(true); // silent load
+    await loadAll(true);
   }
 
   init();

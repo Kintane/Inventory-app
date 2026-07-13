@@ -31,7 +31,8 @@
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     font-size: 16px;
     min-height: 100vh;
-    overscroll-behavior-y: contain;
+    /* Changed to 'none' to prevent native browser rubber-band from hijacking the pull gesture */
+    overscroll-behavior-y: none; 
   }
   body { padding-bottom: 100px; }
   header {
@@ -102,10 +103,15 @@
     color: var(--text-dim);
     font-size: 13px;
     font-weight: 500;
-    transition: height 0.2s ease-out;
     user-select: none;
     -webkit-user-select: none;
     background: var(--bg);
+    position: relative;
+    z-index: 5;
+    /* No transition here so it follows the finger instantly */
+  }
+  .ptr-container.smooth {
+    transition: height 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
   }
   .ptr-container.refreshing {
     height: 50px !important;
@@ -214,7 +220,9 @@
       padding: 18px 18px 24px;
       padding-top: calc(18px + env(safe-area-inset-top, 0px));
       padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
-      overflow-y: auto; -webkit-overflow-scrolling: touch;
+      overflow-y: auto; 
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-y: contain; /* Allow normal scroll behavior inside the sheet */
     }
     .sheet-handle { display: none; }
   }
@@ -424,19 +432,26 @@
   const ptrText = $('ptrText');
 
   document.addEventListener('touchstart', (e) => {
-    if ((window.scrollY <= 5 || document.documentElement.scrollTop <= 5) && !isRefreshing && e.touches && e.touches.length === 1) {
+    // Ignore if the add/edit modal is open
+    if (overlay.classList.contains('open')) return;
+    
+    // Check if we are at the very top of the page
+    const scrollTop = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop;
+    if (scrollTop <= 5 && !isRefreshing && e.touches && e.touches.length === 1) {
       startY = e.touches[0].clientY;
       isPulling = true;
+      ptrContainer.classList.remove('smooth'); // Disable transition during pull for instant response
     }
   }, { passive: true });
 
   document.addEventListener('touchmove', (e) => {
     if (!isPulling || isRefreshing || !e.touches || e.touches.length !== 1) return;
+    
     const currentY = e.touches[0].clientY;
     const diff = currentY - startY;
 
     if (diff > 0) {
-      e.preventDefault(); // Prevent native scroll/rubber-band while pulling
+      e.preventDefault(); // Crucial: prevents native scroll/rubber-band while pulling
       const pullDistance = Math.min(diff, MAX_PULL);
       ptrContainer.style.height = `${pullDistance}px`;
       
@@ -454,8 +469,12 @@
       return;
     }
     isPulling = false;
-    const currentY = e.changedTouches[0].clientY;
+    
+    const touch = e.changedTouches ? e.changedTouches[0] : e;
+    const currentY = touch.clientY;
     const diff = currentY - startY;
+
+    ptrContainer.classList.add('smooth'); // Enable transition for snap back or refresh
 
     if (diff >= THRESHOLD) {
       triggerRefresh();
@@ -472,10 +491,11 @@
     ptrText.textContent = 'Refreshing...';
 
     try {
-      await loadAll(false, true); // force = true
+      // force = true bypasses the 24h cache check
+      await loadAll(false, true); 
     } catch (err) {
       console.error('Refresh failed:', err);
-      toast('Refresh failed: ' + err.message);
+      toast('Refresh failed');
     } finally {
       isRefreshing = false;
       ptrContainer.classList.remove('refreshing');
@@ -549,12 +569,10 @@
 
   // ---------- Load ----------
   async function loadAll(silent = false, force = false) {
-    // Always show cache first (instant)
     const cached = loadCache();
     if (cached && cached.items) {
       items = cached.items;
       lastUpdateTime = cached.timestamp;
-      // Calculate next row number
       nextRowNumber = Math.max(...items.map(i => i.rowNumber || 0), 1) + 1;
       render();
     }
@@ -564,7 +582,6 @@
       return;
     }
 
-    // Fetch in background (silent, no indicator)
     try {
       const freshItems = await fetchFromSheets();
       items = freshItems;
@@ -589,14 +606,12 @@
       ...data
     };
     
-    // Add to UI immediately
     items.push(newItem);
     nextRowNumber++;
     saveCache(items);
     render();
     toast('Added');
     
-    // Sync to Google Sheets in background (fire and forget)
     try {
       await postToSheets({ action: 'add', ...data });
     } catch (err) {
@@ -608,13 +623,11 @@
   async function updateItem(item, data) {
     const original = { ...item };
     
-    // Update UI immediately
     Object.assign(item, data);
     saveCache(items);
     render();
     toast('Updated');
     
-    // Sync to Google Sheets in background
     try {
       await postToSheets({
         action: 'update',
@@ -623,7 +636,6 @@
       });
     } catch (err) {
       console.error('Sync failed:', err);
-      // Rollback
       Object.assign(item, original);
       saveCache(items);
       render();
@@ -634,18 +646,15 @@
   async function deleteItem(item) {
     const originalItems = [...items];
     
-    // These 3 lines run INSTANTLY and synchronously
     items = items.filter(i => i.id !== item.id);
     saveCache(items);
     render();
     toast('Deleted');
     
-    // This is where it yields to the background
     try {
       await postToSheets({ action: 'delete', row: item.rowNumber });
     } catch (err) {
       console.error('Sync failed:', err);
-      // Rollback only if the background sync actually fails
       items = originalItems;
       saveCache(items);
       render();
@@ -794,15 +803,13 @@
     };
     if (!data.name) return;
     
-    // 1. Close the sheet immediately for instant UI feedback
     closeSheet();
     
-    // 2. Trigger background save (fire-and-forget)
     if (id && id.startsWith('row_')) {
       const item = items.find(i => i.id === id);
-      updateItem(item, data); // No await
+      updateItem(item, data);
     } else {
-      addItem(data); // No await
+      addItem(data);
     }
   });
 
@@ -812,11 +819,7 @@
     
     if (confirm('Delete this item?')) {
       const item = items.find(i => i.id === id);
-      
-      // 1. Close the sheet IMMEDIATELY (synchronous, no waiting)
       closeSheet();
-      
-      // 2. Trigger background deletion
       deleteItem(item);
     }
   });

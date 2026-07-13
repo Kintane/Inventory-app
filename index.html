@@ -256,6 +256,27 @@
     transition: opacity 0.2s, transform 0.2s;
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+  
+  /* Sync indicator */
+  .sync-indicator {
+    position: fixed; top: 8px; left: 50%; transform: translateX(-50%);
+    background: var(--surface-2); color: var(--text-dim);
+    padding: 4px 12px; border-radius: 999px;
+    border: 1px solid var(--border); font-size: 12px;
+    z-index: 100; opacity: 0; pointer-events: none;
+    transition: opacity 0.3s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .sync-indicator.show { opacity: 1; }
+  .sync-indicator .spinner {
+    width: 10px; height: 10px;
+    border: 2px solid var(--text-faint);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  
   @media (min-width: 640px) {
     main { max-width: 720px; margin: 0 auto; padding: 16px 24px; }
     header { padding: 16px 24px 12px; }
@@ -342,178 +363,223 @@
   </div>
 </div>
 
+<div class="sync-indicator" id="syncIndicator">
+  <div class="spinner"></div>
+  <span id="syncText">Syncing...</span>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
 (() => {
   // ========== CONFIGURATION ==========
   const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwKtyJJQkP0hV63zhTwnBX_zWJEZfu5Yp6IDr0JsyUEWXYECLqbDfKaJr_r9JSs12bh/exec'; // ← Paste your Apps Script URL here
+  const CACHE_KEY = 'equipment_cache_v1';
+  const CACHE_MAX_AGE = 5 * 60 * 1000; // 5 minutes
   // ===================================
 
   let items = [];
   let currentFilter = 'all';
   let currentSearch = '';
-  let isLoading = false;
+  let isSyncing = false;
 
   const $ = id => document.getElementById(id);
   const listEl = $('list');
   const overlay = $('overlay');
   const sheet = overlay.querySelector('.sheet');
 
-  // Google Apps Script API functions
-  async function loadFromSheets() {
+  // ---------- Cache helpers ----------
+  function loadCache() {
     try {
-      isLoading = true;
-      render();
-      
-      const response = await fetch(APPS_SCRIPT_URL);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      const raw = localStorage.getItem(CACHE_KEY);
+      if (!raw) return null;
+      const data = JSON.parse(raw);
+      // Check if cache is too old
+      if (Date.now() - data.timestamp > CACHE_MAX_AGE) {
+        return { items: data.items, stale: true };
       }
-      
-      const data = await response.json();
-      
-      if (data.error) {
-        throw new Error(data.error);
-      }
-      
-      items = data.map(item => ({
-        id: 'row_' + item.rowNumber,
-        ...item
+      return { items: data.items, stale: false };
+    } catch { return null; }
+  }
+
+  function saveCache(itemsToCache) {
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify({
+        items: itemsToCache,
+        timestamp: Date.now()
       }));
-      
-      isLoading = false;
+    } catch (e) { console.warn('Cache save failed:', e); }
+  }
+
+  // ---------- Sync indicator ----------
+  function showSync(text = 'Syncing...') {
+    $('syncText').textContent = text;
+    $('syncIndicator').classList.add('show');
+  }
+  function hideSync() {
+    $('syncIndicator').classList.remove('show');
+  }
+
+  // ---------- API functions ----------
+  async function parseResponse(response) {
+    const text = await response.text();
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      console.error('Failed to parse JSON:', text);
+      throw new Error('Invalid response from server');
+    }
+  }
+
+  async function fetchFromSheets() {
+    const response = await fetch(APPS_SCRIPT_URL);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await parseResponse(response);
+    if (data.error) throw new Error(data.error);
+    if (!Array.isArray(data)) throw new Error('Invalid data format');
+    return data.map(item => ({
+      id: 'row_' + item.rowNumber,
+      ...item
+    }));
+  }
+
+  async function postToSheets(payload) {
+    const response = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const result = await parseResponse(response);
+    if (!result.success) throw new Error(result.message || 'Request failed');
+    return result;
+  }
+
+  // ---------- Main load flow ----------
+  async function loadAll() {
+    // 1. Show cached data INSTANTLY
+    const cached = loadCache();
+    if (cached && cached.items.length > 0) {
+      items = cached.items;
       render();
-    } catch (err) {
-      console.error('Error loading from Sheets:', err);
-      toast('Error loading data: ' + err.message);
-      isLoading = false;
+      if (!cached.stale) {
+        // Cache is fresh, no need to fetch
+        return;
+      }
+    }
+
+    // 2. Fetch fresh data in background
+    try {
+      showSync('Syncing...');
+      const freshItems = await fetchFromSheets();
+      items = freshItems;
+      saveCache(items);
       render();
-    }
-  }
-
-  async function saveToSheets(item) {
-    try {
-      const response = await fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'text/plain;charset=utf-8',
-        },
-        body: JSON.stringify({
-          action: 'update',
-          row: item.rowNumber,
-          name: item.name,
-          qty: item.qty,
-          min: item.min,
-          unit: item.unit,
-          category: item.category,
-          location: item.location
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const result = await response.json();
-      
-      if (!result.success) {
-        throw new Error(result.message);
-      }
-      
-      await loadFromSheets();
-      toast('Saved successfully');
+      hideSync();
     } catch (err) {
-      console.error('Error saving to Sheets:', err);
-      toast('Error saving: ' + err.message);
+      console.error('Sync failed:', err);
+      hideSync();
+      if (items.length === 0) {
+        toast('Could not load data: ' + err.message);
+      } else {
+        toast('Using cached data (sync failed)');
+      }
     }
   }
 
-  async function addToSheets(item) {
+  // ---------- Optimistic mutations ----------
+  async function addItem(data) {
+    // Create temporary item with local ID
+    const tempItem = {
+      id: 'temp_' + Date.now(),
+      rowNumber: null,
+      ...data
+    };
+    
+    // Optimistic: add to UI immediately
+    items.push(tempItem);
+    saveCache(items);
+    render();
+    toast('Added');
+    
+    // Sync in background
     try {
-      const response = await fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'text/plain;charset=utf-8',
-        },
-        body: JSON.stringify({
-          action: 'add',
-          name: item.name,
-          qty: item.qty,
-          min: item.min,
-          unit: item.unit,
-          category: item.category,
-          location: item.location
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const result = await response.json();
-      
-      if (!result.success) {
-        throw new Error(result.message);
-      }
-      
-      await loadFromSheets();
-      toast('Added successfully');
+      showSync('Saving...');
+      await postToSheets({ action: 'add', ...data });
+      // Reload fresh data to get real row numbers
+      const freshItems = await fetchFromSheets();
+      items = freshItems;
+      saveCache(items);
+      render();
+      hideSync();
     } catch (err) {
-      console.error('Error adding to Sheets:', err);
-      toast('Error adding: ' + err.message);
+      hideSync();
+      toast('Save failed: ' + err.message);
     }
   }
 
-  async function deleteFromSheets(item) {
+  async function updateItem(item, data) {
+    const original = { ...item };
+    
+    // Optimistic: update UI immediately
+    Object.assign(item, data);
+    saveCache(items);
+    render();
+    toast('Updated');
+    
+    // Sync in background
     try {
-      const response = await fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'text/plain;charset=utf-8',
-        },
-        body: JSON.stringify({
-          action: 'delete',
-          row: item.rowNumber
-        })
+      showSync('Saving...');
+      await postToSheets({
+        action: 'update',
+        row: item.rowNumber,
+        ...data
       });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const result = await response.json();
-      
-      if (!result.success) {
-        throw new Error(result.message);
-      }
-      
-      await loadFromSheets();
-      toast('Deleted successfully');
+      hideSync();
     } catch (err) {
-      console.error('Error deleting from Sheets:', err);
-      toast('Error deleting: ' + err.message);
+      hideSync();
+      // Rollback on failure
+      Object.assign(item, original);
+      saveCache(items);
+      render();
+      toast('Save failed: ' + err.message);
     }
   }
 
+  async function deleteItem(item) {
+    const originalItems = [...items];
+    
+    // Optimistic: remove from UI immediately
+    items = items.filter(i => i.id !== item.id);
+    saveCache(items);
+    render();
+    toast('Deleted');
+    
+    // Sync in background
+    try {
+      showSync('Deleting...');
+      await postToSheets({ action: 'delete', row: item.rowNumber });
+      hideSync();
+    } catch (err) {
+      hideSync();
+      // Rollback
+      items = originalItems;
+      saveCache(items);
+      render();
+      toast('Delete failed: ' + err.message);
+    }
+  }
+
+  // ---------- Status & render ----------
   function statusOf(item) {
     if (item.qty <= 0) return 'out';
     if (item.qty <= item.min) return 'low';
     return 'ok';
   }
-
   function statusLabel(s) {
     return s === 'out' ? 'Out' : s === 'low' ? 'Low' : 'OK';
   }
 
   function render() {
-    if (isLoading) {
-      listEl.innerHTML = '<div class="empty"><h3>Loading...</h3></div>';
-      return;
-    }
-
-    // Filter out any items without valid names
     items = items.filter(item => item && item.name && item.name.trim() !== '');
 
     let cAll = 0, cOut = 0, cLow = 0, cOk = 0;
@@ -541,7 +607,6 @@
     filtered.sort((a,b) => {
       const sa = order[statusOf(a)], sb = order[statusOf(b)];
       if (sa !== sb) return sa - sb;
-      // Defensive check for undefined names
       const nameA = (a.name || '').toString();
       const nameB = (b.name || '').toString();
       return nameA.localeCompare(nameB);
@@ -555,7 +620,7 @@
             <path d="M3.3 7 12 12l8.7-5M12 22V12"/>
           </svg>
           <h3>${items.length === 0 ? 'No equipment yet' : 'Nothing matches'}</h3>
-          <p>${items.length === 0 ? 'Add items in Google Sheets or tap + to add' : 'Try a different search or filter.'}</p>
+          <p>${items.length === 0 ? 'Tap + to add your first item' : 'Try a different search or filter.'}</p>
         </div>`;
       return;
     }
@@ -563,12 +628,10 @@
     listEl.innerHTML = filtered.map(it => {
       const s = statusOf(it);
       const unit = it.unit ? ` ${it.unit}` : '';
-
       const metaParts = [];
       metaParts.push(`<span class="qty ${s}">${it.qty}/${it.min}${unit}</span>`);
       if (it.category) metaParts.push(`<span class="sep">·</span><span>${escapeHtml(it.category)}</span>`);
       if (it.location) metaParts.push(`<span class="sep">·</span><span>${escapeHtml(it.location)}</span>`);
-
       return `
         <div class="item status-${s}" data-id="${it.id}">
           <div class="item-name">
@@ -584,11 +647,11 @@
     return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
 
+  // ---------- Events ----------
   listEl.addEventListener('click', e => {
     const itemEl = e.target.closest('.item');
     if (!itemEl) return;
-    const id = itemEl.dataset.id;
-    const item = items.find(i => i.id === id);
+    const item = items.find(i => i.id === itemEl.dataset.id);
     if (!item) return;
     openEdit(item);
   });
@@ -608,7 +671,6 @@
   });
 
   $('addBtn').addEventListener('click', () => openEdit(null));
-
   $('closeSheet').addEventListener('click', closeSheet);
   $('cancelBtn').addEventListener('click', closeSheet);
   overlay.addEventListener('click', e => { if (e.target === overlay) closeSheet(); });
@@ -623,7 +685,6 @@
     $('itemCategory').value = item ? (item.category || '') : '';
     $('itemLocation').value = item ? (item.location || '') : '';
     $('deleteBtn').style.display = item ? 'block' : 'none';
-
     sheet.scrollTop = 0;
     overlay.classList.add('open');
     setTimeout(() => $('itemName').focus(), 200);
@@ -648,10 +709,9 @@
     
     if (id && id.startsWith('row_')) {
       const item = items.find(i => i.id === id);
-      Object.assign(item, data);
-      await saveToSheets(item);
+      await updateItem(item, data);
     } else {
-      await addToSheets(data);
+      await addItem(data);
     }
     
     $('saveBtn').disabled = false;
@@ -662,12 +722,9 @@
   $('deleteBtn').addEventListener('click', async () => {
     const id = $('itemId').value;
     if (!id || !id.startsWith('row_')) return;
-    
-    if (confirm('Delete this item from Google Sheets?')) {
+    if (confirm('Delete this item?')) {
       const item = items.find(i => i.id === id);
-      $('deleteBtn').disabled = true;
-      await deleteFromSheets(item);
-      $('deleteBtn').disabled = false;
+      await deleteItem(item);
       closeSheet();
     }
   });
@@ -682,10 +739,19 @@
   });
 
   $('reloadBtn').addEventListener('click', async () => {
-    $('reloadBtn').textContent = 'Loading...';
-    await loadFromSheets();
-    $('reloadBtn').textContent = '🔄 Refresh data';
     menu.classList.remove('open');
+    try {
+      showSync('Refreshing...');
+      const freshItems = await fetchFromSheets();
+      items = freshItems;
+      saveCache(items);
+      render();
+      hideSync();
+      toast('Refreshed');
+    } catch (err) {
+      hideSync();
+      toast('Refresh failed: ' + err.message);
+    }
   });
 
   let toastTimer;
@@ -697,6 +763,7 @@
     toastTimer = setTimeout(() => t.classList.remove('show'), 2000);
   }
 
+  // ---------- Init ----------
   async function init() {
     if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
       listEl.innerHTML = `
@@ -706,7 +773,7 @@
         </div>`;
       return;
     }
-    await loadFromSheets();
+    await loadAll();
   }
 
   init();

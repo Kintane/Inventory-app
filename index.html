@@ -433,7 +433,7 @@
   }
 
   // ---------- Load ----------
-    async function loadAll(silent = false) {
+  async function loadAll(silent = false) {
     // Always show cache first (instant)
     const cached = loadCache();
     if (cached && cached.items) {
@@ -444,12 +444,7 @@
       render();
     }
 
-    // If cache is fresh enough, don't fetch
-    if (cached && cached.timestamp && (Date.now() - cached.timestamp) < CACHE_MAX_AGE) {
-      return;
-    }
-
-    // Fetch in background (silent, no indicator)
+    // Always fetch fresh data in background (even if cache is recent)
     try {
       const freshItems = await fetchFromSheets();
       items = freshItems;

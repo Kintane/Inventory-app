@@ -31,8 +31,7 @@
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     font-size: 16px;
     min-height: 100vh;
-    /* Changed to 'none' to prevent native browser rubber-band from hijacking the pull gesture */
-    overscroll-behavior-y: none; 
+    overscroll-behavior-y: none;
   }
   body { padding-bottom: 100px; }
   header {
@@ -93,7 +92,6 @@
   }
   .tab.active .count { background: transparent; color: var(--accent); }
   
-  /* Pull to Refresh Styles */
   .ptr-container {
     height: 0;
     overflow: hidden;
@@ -108,7 +106,6 @@
     background: var(--bg);
     position: relative;
     z-index: 5;
-    /* No transition here so it follows the finger instantly */
   }
   .ptr-container.smooth {
     transition: height 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -222,7 +219,7 @@
       padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
       overflow-y: auto; 
       -webkit-overflow-scrolling: touch;
-      overscroll-behavior-y: contain; /* Allow normal scroll behavior inside the sheet */
+      overscroll-behavior-y: contain;
     }
     .sheet-handle { display: none; }
   }
@@ -341,7 +338,6 @@
   </div>
 </header>
 
-<!-- Pull to Refresh Indicator -->
 <div class="ptr-container" id="ptrContainer">
   <div class="ptr-spinner"></div>
   <span id="ptrText">Pull to refresh</span>
@@ -415,7 +411,7 @@
   let currentFilter = 'all';
   let currentSearch = '';
   let lastUpdateTime = null;
-  let nextRowNumber = 2; // Start at row 2 (after header)
+  let nextRowNumber = 2;
 
   const $ = id => document.getElementById(id);
   const listEl = $('list');
@@ -432,29 +428,24 @@
   const ptrText = $('ptrText');
 
   document.addEventListener('touchstart', (e) => {
-    // Ignore if the add/edit modal is open
     if (overlay.classList.contains('open')) return;
-    
-    // Check if we are at the very top of the page
     const scrollTop = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop;
     if (scrollTop <= 5 && !isRefreshing && e.touches && e.touches.length === 1) {
       startY = e.touches[0].clientY;
       isPulling = true;
-      ptrContainer.classList.remove('smooth'); // Disable transition during pull for instant response
+      ptrContainer.classList.remove('smooth');
     }
   }, { passive: true });
 
   document.addEventListener('touchmove', (e) => {
     if (!isPulling || isRefreshing || !e.touches || e.touches.length !== 1) return;
-    
     const currentY = e.touches[0].clientY;
     const diff = currentY - startY;
 
     if (diff > 0) {
-      e.preventDefault(); // Crucial: prevents native scroll/rubber-band while pulling
+      e.preventDefault();
       const pullDistance = Math.min(diff, MAX_PULL);
       ptrContainer.style.height = `${pullDistance}px`;
-      
       if (pullDistance >= THRESHOLD) {
         ptrText.textContent = 'Release to refresh';
       } else {
@@ -469,12 +460,11 @@
       return;
     }
     isPulling = false;
-    
     const touch = e.changedTouches ? e.changedTouches[0] : e;
     const currentY = touch.clientY;
     const diff = currentY - startY;
 
-    ptrContainer.classList.add('smooth'); // Enable transition for snap back or refresh
+    ptrContainer.classList.add('smooth');
 
     if (diff >= THRESHOLD) {
       triggerRefresh();
@@ -491,8 +481,7 @@
     ptrText.textContent = 'Refreshing...';
 
     try {
-      // force = true bypasses the 24h cache check
-      await loadAll(false, true); 
+      await loadAll(false, true);
     } catch (err) {
       console.error('Refresh failed:', err);
       toast('Refresh failed');
@@ -505,7 +494,6 @@
   }
   // ===================================
 
-  // ---------- Cache ----------
   function loadCache() {
     try {
       const raw = localStorage.getItem(CACHE_KEY);
@@ -534,7 +522,6 @@
     return `${days}d ago`;
   }
 
-  // ---------- API ----------
   async function parseResponse(response) {
     const text = await response.text();
     try {
@@ -577,7 +564,7 @@
       render();
     }
 
-    // If cache is fresh enough, don't fetch (unless forced)
+    // If cache is fresh enough, don't fetch (UNLESS force is true)
     if (!force && cached && cached.timestamp && (Date.now() - cached.timestamp) < CACHE_MAX_AGE) {
       return;
     }
@@ -598,42 +585,30 @@
     }
   }
 
-  // ---------- Mutations (INSTANT, no refetch) ----------
+  // ---------- Mutations ----------
   async function addItem(data) {
     const newItem = {
       id: 'row_' + nextRowNumber,
       rowNumber: nextRowNumber,
       ...data
     };
-    
     items.push(newItem);
     nextRowNumber++;
     saveCache(items);
     render();
     toast('Added');
-    
-    try {
-      await postToSheets({ action: 'add', ...data });
-    } catch (err) {
-      console.error('Sync failed:', err);
-      toast('Sync failed (saved locally)');
-    }
+    try { await postToSheets({ action: 'add', ...data }); } 
+    catch (err) { console.error('Sync failed:', err); toast('Sync failed (saved locally)'); }
   }
 
   async function updateItem(item, data) {
     const original = { ...item };
-    
     Object.assign(item, data);
     saveCache(items);
     render();
     toast('Updated');
-    
     try {
-      await postToSheets({
-        action: 'update',
-        row: item.rowNumber,
-        ...data
-      });
+      await postToSheets({ action: 'update', row: item.rowNumber, ...data });
     } catch (err) {
       console.error('Sync failed:', err);
       Object.assign(item, original);
@@ -645,12 +620,10 @@
 
   async function deleteItem(item) {
     const originalItems = [...items];
-    
     items = items.filter(i => i.id !== item.id);
     saveCache(items);
     render();
     toast('Deleted');
-    
     try {
       await postToSheets({ action: 'delete', row: item.rowNumber });
     } catch (err) {
@@ -692,17 +665,14 @@
     let filtered = items.filter(it => {
       if (currentFilter !== 'all' && statusOf(it) !== currentFilter) return false;
       if (!q) return true;
-      return (it.name + ' ' + (it.category||'') + ' ' + (it.location||''))
-        .toLowerCase().includes(q);
+      return (it.name + ' ' + (it.category||'') + ' ' + (it.location||'')).toLowerCase().includes(q);
     });
 
     const order = { out: 0, low: 1, ok: 2 };
     filtered.sort((a,b) => {
       const sa = order[statusOf(a)], sb = order[statusOf(b)];
       if (sa !== sb) return sa - sb;
-      const nameA = (a.name || '').toString();
-      const nameB = (b.name || '').toString();
-      return nameA.localeCompare(nameB);
+      return (a.name || '').toString().localeCompare((b.name || '').toString());
     });
 
     let html = '';
@@ -802,12 +772,9 @@
       location: $('itemLocation').value.trim(),
     };
     if (!data.name) return;
-    
     closeSheet();
-    
     if (id && id.startsWith('row_')) {
-      const item = items.find(i => i.id === id);
-      updateItem(item, data);
+      updateItem(items.find(i => i.id === id), data);
     } else {
       addItem(data);
     }
@@ -816,11 +783,9 @@
   $('deleteBtn').addEventListener('click', () => {
     const id = $('itemId').value;
     if (!id || !id.startsWith('row_')) return;
-    
     if (confirm('Delete this item?')) {
-      const item = items.find(i => i.id === id);
       closeSheet();
-      deleteItem(item);
+      deleteItem(items.find(i => i.id === id));
     }
   });
 
@@ -860,7 +825,9 @@
 
   // ---------- Init ----------
   async function init() {
-    await loadAll(true);
+    // true = silent (no toast on success)
+    // true = force fetch (bypasses the 24h cache limit to always get fresh data on load)
+    await loadAll(true, true);
   }
 
   init();

@@ -516,28 +516,27 @@
     }
   }
 
-  async function deleteItem(item) {
+    async function deleteItem(item) {
     const originalItems = [...items];
     
-    // Remove from UI immediately
+    // These 3 lines run INSTANTLY and synchronously
     items = items.filter(i => i.id !== item.id);
     saveCache(items);
     render();
     toast('Deleted');
     
-    // Sync to Google Sheets in background
+    // This is where it yields to the background
     try {
       await postToSheets({ action: 'delete', row: item.rowNumber });
     } catch (err) {
       console.error('Sync failed:', err);
-      // Rollback
+      // Rollback only if the background sync actually fails
       items = originalItems;
       saveCache(items);
       render();
       toast('Delete failed');
     }
   }
-
   // ---------- Render ----------
   function statusOf(item) {
     if (item.qty <= 0) return 'out';

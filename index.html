@@ -532,7 +532,7 @@
   }
 
   async function fetchFromSheets() {
-    const response = await fetch(APPS_SCRIPT_URL);
+    const response = await fetch(APPS_SCRIPT_URL, { cache: 'no-store' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await parseResponse(response);
     if (data.error) throw new Error(data.error);
@@ -564,7 +564,6 @@
       render();
     }
 
-    // If cache is fresh enough, don't fetch (UNLESS force is true)
     if (!force && cached && cached.timestamp && (Date.now() - cached.timestamp) < CACHE_MAX_AGE) {
       return;
     }
@@ -824,11 +823,47 @@
   }
 
   // ---------- Init ----------
-  async function init() {
-    // true = silent (no toast on success)
-    // true = force fetch (bypasses the 24h cache limit to always get fresh data on load)
-    await loadAll(true, true);
+  function init() {
+    // 1. Load cached data instantly (synchronous, no await)
+    const cached = loadCache();
+    if (cached && cached.items) {
+      items = cached.items;
+      lastUpdateTime = cached.timestamp;
+      nextRowNumber = Math.max(...items.map(i => i.rowNumber || 0), 1) + 1;
+      render();
+    }
+
+    // 2. Schedule fresh fetch after a short delay to avoid mobile browser throttling
+    //    This ensures the browser has finished rendering before we hit the network
+    setTimeout(() => {
+      loadAll(true, true).catch(err => {
+        console.error('Initial background fetch failed:', err);
+      });
+    }, 300);
   }
+
+  // 3. Backup: refresh when the tab becomes visible (handles bfcache, background tabs, etc.)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      const cached = loadCache();
+      const age = cached && cached.timestamp ? Date.now() - cached.timestamp : Infinity;
+      // Only refresh if cache is older than 5 minutes to avoid excessive requests
+      if (age > 5 * 60 * 1000) {
+        loadAll(true, true).catch(err => {
+          console.error('Visibility refresh failed:', err);
+        });
+      }
+    }
+  });
+
+  // 4. Backup: refresh when page is restored from bfcache (back/forward navigation)
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted) {
+      loadAll(true, true).catch(err => {
+        console.error('Pageshow refresh failed:', err);
+      });
+    }
+  });
 
   init();
 })();

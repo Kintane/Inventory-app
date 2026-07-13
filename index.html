@@ -91,6 +91,42 @@
     color: var(--accent);
   }
   .tab.active .count { background: transparent; color: var(--accent); }
+  
+  /* Pull to Refresh Styles */
+  .ptr-container {
+    height: 0;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-dim);
+    font-size: 13px;
+    font-weight: 500;
+    transition: height 0.2s ease-out;
+    user-select: none;
+    -webkit-user-select: none;
+    background: var(--bg);
+  }
+  .ptr-container.refreshing {
+    height: 50px !important;
+  }
+  .ptr-spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-right: 8px;
+    display: none;
+  }
+  .ptr-container.refreshing .ptr-spinner {
+    display: block;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
   main { padding: 12px 16px; }
   .item {
     background: var(--surface);
@@ -297,7 +333,15 @@
   </div>
 </header>
 
-<main id="list"></main>
+<!-- Pull to Refresh Indicator -->
+<div class="ptr-container" id="ptrContainer">
+  <div class="ptr-spinner"></div>
+  <span id="ptrText">Pull to refresh</span>
+</div>
+
+<main>
+  <div id="list"></div>
+</main>
 
 <button class="fab" id="addBtn" aria-label="Add item">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
@@ -370,6 +414,77 @@
   const overlay = $('overlay');
   const sheet = overlay.querySelector('.sheet');
 
+  // ========== PULL TO REFRESH ==========
+  let startY = 0;
+  let isPulling = false;
+  let isRefreshing = false;
+  const MAX_PULL = 80;
+  const THRESHOLD = 50;
+  const ptrContainer = $('ptrContainer');
+  const ptrText = $('ptrText');
+
+  document.addEventListener('touchstart', (e) => {
+    if ((window.scrollY <= 5 || document.documentElement.scrollTop <= 5) && !isRefreshing && e.touches && e.touches.length === 1) {
+      startY = e.touches[0].clientY;
+      isPulling = true;
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchmove', (e) => {
+    if (!isPulling || isRefreshing || !e.touches || e.touches.length !== 1) return;
+    const currentY = e.touches[0].clientY;
+    const diff = currentY - startY;
+
+    if (diff > 0) {
+      e.preventDefault(); // Prevent native scroll/rubber-band while pulling
+      const pullDistance = Math.min(diff, MAX_PULL);
+      ptrContainer.style.height = `${pullDistance}px`;
+      
+      if (pullDistance >= THRESHOLD) {
+        ptrText.textContent = 'Release to refresh';
+      } else {
+        ptrText.textContent = 'Pull to refresh';
+      }
+    }
+  }, { passive: false });
+
+  document.addEventListener('touchend', (e) => {
+    if (!isPulling || isRefreshing) {
+      isPulling = false;
+      return;
+    }
+    isPulling = false;
+    const currentY = e.changedTouches[0].clientY;
+    const diff = currentY - startY;
+
+    if (diff >= THRESHOLD) {
+      triggerRefresh();
+    } else {
+      ptrContainer.style.height = '0px';
+      ptrText.textContent = 'Pull to refresh';
+    }
+  });
+
+  async function triggerRefresh() {
+    isRefreshing = true;
+    ptrContainer.classList.add('refreshing');
+    ptrContainer.style.height = '50px';
+    ptrText.textContent = 'Refreshing...';
+
+    try {
+      await loadAll(false, true); // force = true
+    } catch (err) {
+      console.error('Refresh failed:', err);
+      toast('Refresh failed: ' + err.message);
+    } finally {
+      isRefreshing = false;
+      ptrContainer.classList.remove('refreshing');
+      ptrContainer.style.height = '0px';
+      ptrText.textContent = 'Pull to refresh';
+    }
+  }
+  // ===================================
+
   // ---------- Cache ----------
   function loadCache() {
     try {
@@ -433,7 +548,7 @@
   }
 
   // ---------- Load ----------
-    async function loadAll(silent = false) {
+  async function loadAll(silent = false, force = false) {
     // Always show cache first (instant)
     const cached = loadCache();
     if (cached && cached.items) {
@@ -444,8 +559,8 @@
       render();
     }
 
-    // If cache is fresh enough, don't fetch
-    if (cached && cached.timestamp && (Date.now() - cached.timestamp) < CACHE_MAX_AGE) {
+    // If cache is fresh enough, don't fetch (unless forced)
+    if (!force && cached && cached.timestamp && (Date.now() - cached.timestamp) < CACHE_MAX_AGE) {
       return;
     }
 
@@ -465,6 +580,7 @@
       }
     }
   }
+
   // ---------- Mutations (INSTANT, no refetch) ----------
   async function addItem(data) {
     const newItem = {
@@ -515,7 +631,7 @@
     }
   }
 
-    async function deleteItem(item) {
+  async function deleteItem(item) {
     const originalItems = [...items];
     
     // These 3 lines run INSTANTLY and synchronously
@@ -536,6 +652,7 @@
       toast('Delete failed');
     }
   }
+
   // ---------- Render ----------
   function statusOf(item) {
     if (item.qty <= 0) return 'out';
@@ -664,7 +781,7 @@
   }
   function closeSheet() { overlay.classList.remove('open'); }
 
-    $('itemForm').addEventListener('submit', e => {
+  $('itemForm').addEventListener('submit', e => {
     e.preventDefault();
     const id = $('itemId').value;
     const data = {
@@ -681,8 +798,6 @@
     closeSheet();
     
     // 2. Trigger background save (fire-and-forget)
-    // The functions below already handle optimistic UI updates and 
-    // background syncing with built-in error handling/toasts.
     if (id && id.startsWith('row_')) {
       const item = items.find(i => i.id === id);
       updateItem(item, data); // No await
@@ -691,7 +806,7 @@
     }
   });
 
-      $('deleteBtn').addEventListener('click', () => {
+  $('deleteBtn').addEventListener('click', () => {
     const id = $('itemId').value;
     if (!id || !id.startsWith('row_')) return;
     
@@ -701,9 +816,7 @@
       // 1. Close the sheet IMMEDIATELY (synchronous, no waiting)
       closeSheet();
       
-      // 2. Trigger background deletion (NO 'await' keyword here)
-      // This lets the function start, update the UI instantly, 
-      // and handle the network request quietly in the background.
+      // 2. Trigger background deletion
       deleteItem(item);
     }
   });
@@ -743,7 +856,7 @@
   }
 
   // ---------- Init ----------
-    async function init() {
+  async function init() {
     await loadAll(true);
   }
 

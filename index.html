@@ -433,7 +433,7 @@
   }
 
   // ---------- Load ----------
-  async function loadAll(silent = false) {
+    async function loadAll(silent = false) {
     // Always show cache first (instant)
     const cached = loadCache();
     if (cached && cached.items) {
@@ -448,6 +448,23 @@
     if (cached && cached.timestamp && (Date.now() - cached.timestamp) < CACHE_MAX_AGE) {
       return;
     }
+
+    // Fetch in background (silent, no indicator)
+    try {
+      const freshItems = await fetchFromSheets();
+      items = freshItems;
+      lastUpdateTime = Date.now();
+      nextRowNumber = Math.max(...items.map(i => i.rowNumber || 0), 1) + 1;
+      saveCache(items, lastUpdateTime);
+      render();
+      if (!silent) toast('Data refreshed');
+    } catch (err) {
+      console.error('Background fetch failed:', err);
+      if (items.length === 0 && !silent) {
+        toast('Could not load: ' + err.message);
+      }
+    }
+  }
 
     // Fetch in background (silent, no indicator)
     try {

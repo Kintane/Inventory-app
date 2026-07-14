@@ -44,7 +44,7 @@
   }
   .header-content { max-width: 720px; margin: 0 auto; }
   .title-row {
-    display: flex; align-items: center; justify-content: space-between;
+    display: flex; align-items: center; justify-content: center;
     margin-bottom: 10px; position: relative;
   }
   h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
@@ -373,11 +373,9 @@
 
 <script>
 (() => {
-  // ========== CONFIGURATION ==========
   const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwKtyJJQkP0hV63zhTwnBX_zWJEZfu5Yp6IDr0JsyUEWXYECLqbDfKaJr_r9JSs12bh/exec';
   const CACHE_KEY = 'equipment_cache_v2';
-  const CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
-  // ===================================
+  const CACHE_MAX_AGE = 24 * 60 * 60 * 1000;
 
   let items = [];
   let currentFilter = 'all';
@@ -390,7 +388,6 @@
   const overlay = $('overlay');
   const sheet = overlay.querySelector('.sheet');
 
-  // ========== PULL TO REFRESH ==========
   let startY = 0;
   let isPulling = false;
   let isRefreshing = false;
@@ -464,7 +461,6 @@
       ptrText.textContent = 'Pull to refresh';
     }
   }
-  // ===================================
 
   function loadCache() {
     try {
@@ -526,7 +522,6 @@
     return result;
   }
 
-  // ---------- Load ----------
   async function loadAll(silent = false, force = false) {
     const cached = loadCache();
     if (cached && cached.items) {
@@ -556,7 +551,6 @@
     }
   }
 
-  // ---------- Mutations ----------
   async function addItem(data) {
     const newItem = {
       id: 'row_' + nextRowNumber,
@@ -606,7 +600,6 @@
     }
   }
 
-  // ---------- Render ----------
   function statusOf(item) {
     if (item.qty <= 0) return 'out';
     if (item.qty <= item.min) return 'low';
@@ -687,7 +680,6 @@
     return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
 
-  // ---------- Events ----------
   listEl.addEventListener('click', e => {
     const itemEl = e.target.closest('.item');
     if (!itemEl) return;
@@ -769,7 +761,6 @@
     toastTimer = setTimeout(() => t.classList.remove('show'), 2000);
   }
 
-  // ---------- Init ----------
   function init() {
     const cached = loadCache();
     if (cached && cached.items) {

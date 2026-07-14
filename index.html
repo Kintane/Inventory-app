@@ -522,7 +522,7 @@
 
   function closeSheet() {
     if (isModalOpen) {
-      if (history.state && history.state.equipmentModal) {
+      if (history.state && history.state.modal) {
         history.back();
       } else {
         closeSheetInternal();
@@ -532,18 +532,23 @@
 
   // Intercept the browser back button
   window.addEventListener('popstate', (e) => {
-    if (e.state && e.state.equipmentModal) {
-      // If an input is still focused, the back button was likely used to dismiss the keyboard.
-      // We blur it to ensure the keyboard hides, and push the state back so the modal stays open.
-      if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.tagName === 'SELECT')) {
-        document.activeElement.blur();
-        history.pushState({ equipmentModal: true }, '');
+    if (isConfirmOpen) {
+      closeConfirmInternal(false);
+      return;
+    }
+    if (isModalOpen) {
+      const active = document.activeElement;
+      const isInput = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT');
+      
+      if (isInput) {
+        // First back press: dismiss keyboard
+        active.blur();
+        // Restore the history state so the modal remains open for the next back press
+        history.pushState({ modal: true }, '');
       } else {
-        // Keyboard is already hidden, so we close the modal.
+        // Second back press: keyboard is already closed, so close the modal
         closeSheetInternal();
       }
-    } else if (e.state && e.state.confirmModal) {
-      closeConfirmInternal(false);
     }
   });
   // ===================================================================
@@ -902,7 +907,7 @@
     sheet.scrollTop = 0;
     
     // Push state to history so the back button closes this modal instead of the page
-    history.pushState({ equipmentModal: true }, '');
+    history.pushState({ modal: true }, '');
     isModalOpen = true;
     
     overlay.classList.add('open');
@@ -923,7 +928,7 @@
     if (!data.name) return;
     
     // Close the sheet via history.back() to cleanly pop the state
-    if (isModalOpen && history.state && history.state.equipmentModal) {
+    if (isModalOpen && history.state && history.state.modal) {
       history.back();
     } else {
       closeSheetInternal();

@@ -31,7 +31,7 @@
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     font-size: 16px;
     min-height: 100vh;
-    overscroll-behavior-y: none;
+    overscroll-behavior-y: contain;
   }
   body { padding-bottom: 100px; }
   header {
@@ -83,44 +83,6 @@
     color: var(--accent);
   }
   .tab.active .count { background: transparent; color: var(--accent); }
-  
-  .ptr-container {
-    height: 0;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-dim);
-    font-size: 13px;
-    font-weight: 500;
-    user-select: none;
-    -webkit-user-select: none;
-    background: var(--bg);
-    position: relative;
-    z-index: 5;
-  }
-  .ptr-container.smooth {
-    transition: height 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-  }
-  .ptr-container.refreshing {
-    height: 50px !important;
-  }
-  .ptr-spinner {
-    width: 18px;
-    height: 18px;
-    border: 2px solid var(--border);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    margin-right: 8px;
-    display: none;
-  }
-  .ptr-container.refreshing .ptr-spinner {
-    display: block;
-  }
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
 
   main { padding: 12px 16px; }
   .item {
@@ -310,11 +272,6 @@
   </div>
 </header>
 
-<div class="ptr-container" id="ptrContainer">
-  <div class="ptr-spinner"></div>
-  <span id="ptrText">Pull to refresh</span>
-</div>
-
 <main>
   <div id="list"></div>
 </main>
@@ -387,80 +344,6 @@
   const listEl = $('list');
   const overlay = $('overlay');
   const sheet = overlay.querySelector('.sheet');
-
-  let startY = 0;
-  let isPulling = false;
-  let isRefreshing = false;
-  const MAX_PULL = 80;
-  const THRESHOLD = 50;
-  const ptrContainer = $('ptrContainer');
-  const ptrText = $('ptrText');
-
-  document.addEventListener('touchstart', (e) => {
-    if (overlay.classList.contains('open')) return;
-    const scrollTop = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop;
-    if (scrollTop <= 5 && !isRefreshing && e.touches && e.touches.length === 1) {
-      startY = e.touches[0].clientY;
-      isPulling = true;
-      ptrContainer.classList.remove('smooth');
-    }
-  }, { passive: true });
-
-  document.addEventListener('touchmove', (e) => {
-    if (!isPulling || isRefreshing || !e.touches || e.touches.length !== 1) return;
-    const currentY = e.touches[0].clientY;
-    const diff = currentY - startY;
-
-    if (diff > 0) {
-      e.preventDefault();
-      const pullDistance = Math.min(diff, MAX_PULL);
-      ptrContainer.style.height = `${pullDistance}px`;
-      if (pullDistance >= THRESHOLD) {
-        ptrText.textContent = 'Release to refresh';
-      } else {
-        ptrText.textContent = 'Pull to refresh';
-      }
-    }
-  }, { passive: false });
-
-  document.addEventListener('touchend', (e) => {
-    if (!isPulling || isRefreshing) {
-      isPulling = false;
-      return;
-    }
-    isPulling = false;
-    const touch = e.changedTouches ? e.changedTouches[0] : e;
-    const currentY = touch.clientY;
-    const diff = currentY - startY;
-
-    ptrContainer.classList.add('smooth');
-
-    if (diff >= THRESHOLD) {
-      triggerRefresh();
-    } else {
-      ptrContainer.style.height = '0px';
-      ptrText.textContent = 'Pull to refresh';
-    }
-  });
-
-  async function triggerRefresh() {
-    isRefreshing = true;
-    ptrContainer.classList.add('refreshing');
-    ptrContainer.style.height = '50px';
-    ptrText.textContent = 'Refreshing...';
-
-    try {
-      await loadAll(false, true);
-    } catch (err) {
-      console.error('Refresh failed:', err);
-      toast('Refresh failed');
-    } finally {
-      isRefreshing = false;
-      ptrContainer.classList.remove('refreshing');
-      ptrContainer.style.height = '0px';
-      ptrText.textContent = 'Pull to refresh';
-    }
-  }
 
   function loadCache() {
     try {

@@ -31,7 +31,6 @@
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     font-size: 16px;
     min-height: 100vh;
-    /* Changed from 'contain' to 'auto' to allow native pull-to-refresh */
     overscroll-behavior-y: auto;
   }
   body { padding-bottom: 100px; }
@@ -334,12 +333,14 @@
   const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwKtyJJQkP0hV63zhTwnBX_zWJEZfu5Yp6IDr0JsyUEWXYECLqbDfKaJr_r9JSs12bh/exec';
   const CACHE_KEY = 'equipment_cache_v2';
   const CACHE_MAX_AGE = 24 * 60 * 60 * 1000;
+  const SEARCH_DEBOUNCE_MS = 300; // Adjust this value (in milliseconds) to tune search responsiveness
 
   let items = [];
   let currentFilter = 'all';
   let currentSearch = '';
   let lastUpdateTime = null;
   let nextRowNumber = 2;
+  let searchDebounceTimer = null;
 
   const $ = id => document.getElementById(id);
   const listEl = $('list');
@@ -582,8 +583,16 @@
   });
 
   $('search').addEventListener('input', e => {
-    currentSearch = e.target.value;
-    render();
+    // Clear the previous debounce timer
+    if (searchDebounceTimer) {
+      clearTimeout(searchDebounceTimer);
+    }
+    
+    // Set a new timer to update search after the debounce delay
+    searchDebounceTimer = setTimeout(() => {
+      currentSearch = e.target.value;
+      render();
+    }, SEARCH_DEBOUNCE_MS);
   });
 
   $('addBtn').addEventListener('click', () => openEdit(null));

@@ -61,29 +61,35 @@
     width: 18px; height: 18px; color: var(--text-faint);
   }
 
-  /* Category Dropdown */
-  .category-select-wrapper {
-    position: relative;
+  /* Filters row: category + limit side by side */
+  .filters-row {
+    display: flex;
+    gap: 8px;
     margin-bottom: 10px;
   }
-  .category-select-wrapper svg {
+  .filter-select-wrapper {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+  }
+  .filter-select-wrapper svg {
     position: absolute;
-    right: 14px;
+    right: 12px;
     top: 50%;
     transform: translateY(-50%);
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
     color: var(--text-faint);
     pointer-events: none;
   }
-  .category-select {
+  .filter-select {
     width: 100%;
-    padding: 11px 40px 11px 14px;
+    padding: 10px 34px 10px 12px;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 12px;
     color: var(--text);
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 500;
     outline: none;
     cursor: pointer;
@@ -92,17 +98,13 @@
     -moz-appearance: none;
     transition: border-color 0.15s;
   }
-  .category-select:focus {
-    border-color: var(--accent);
-  }
-  .category-select option {
+  .filter-select:focus { border-color: var(--accent); }
+  .filter-select option {
     background: var(--surface);
     color: var(--text);
     padding: 8px;
   }
-  .category-select.empty {
-    color: var(--text-faint);
-  }
+  .filter-select.empty { color: var(--text-faint); }
 
   main { padding: 12px 16px; }
   .item {
@@ -154,6 +156,42 @@
   .badge.out { background: var(--out-soft); color: var(--out); }
   .badge.low { background: var(--low-soft); color: var(--low); }
   .badge.ok  { background: var(--ok-soft);  color: var(--ok); }
+
+  /* Load more button */
+  .load-more {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 14px;
+    margin: 12px 0 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    color: var(--text-dim);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    animation: fadeIn 0.25s ease;
+  }
+  .load-more:hover {
+    background: var(--surface-2);
+    color: var(--text);
+    border-color: var(--accent);
+  }
+  .load-more:active { transform: scale(0.98); }
+  .load-more svg {
+    width: 16px;
+    height: 16px;
+  }
+  .load-more-count {
+    color: var(--text-faint);
+    font-weight: 500;
+    font-size: 13px;
+  }
+
   .empty {
     text-align: center; padding: 60px 20px; color: var(--text-dim);
   }
@@ -173,7 +211,6 @@
   .fab:active { transform: scale(0.94); }
   .fab svg { width: 26px; height: 26px; }
 
-  /* Main overlay (Add/Edit sheet) */
   .overlay {
     position: fixed; inset: 0;
     background: rgba(0,0,0,0.6);
@@ -185,7 +222,6 @@
   }
   .overlay.open { display: flex; animation: fadeIn 0.2s; }
 
-  /* Confirm dialog overlay */
   .confirm-overlay {
     position: fixed; inset: 0;
     background: rgba(0,0,0,0.6);
@@ -245,21 +281,15 @@
     .sheet-handle { display: none; }
   }
   @media (min-width: 640px) {
-    /* Center the sheet vertically on desktop */
     .overlay.open { align-items: center; }
     .sheet {
       width: 100%; max-width: 520px;
-      /* Full rounded corners since it's now a centered modal, not a bottom sheet */
       border-radius: 20px;
       padding: 22px 22px 24px;
       max-height: 92vh;
       overflow-y: auto;
       animation: popIn 0.25s cubic-bezier(0.2,0.8,0.2,1);
     }
-  }
-  @keyframes slideUp {
-    from { transform: translateY(100%); }
-    to { transform: translateY(0); }
   }
   .sheet-handle {
     width: 40px; height: 4px; background: var(--border);
@@ -332,11 +362,24 @@
       <input type="text" id="search" placeholder="Search equipment..." />
     </div>
 
-    <div class="category-select-wrapper">
-      <select class="category-select" id="categorySelect">
-        <option value="">All categories</option>
-      </select>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+    <div class="filters-row">
+      <div class="filter-select-wrapper">
+        <select class="filter-select" id="categorySelect">
+          <option value="">All categories</option>
+        </select>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="filter-select-wrapper">
+        <select class="filter-select" id="limitSelect">
+          <option value="10">Show 10</option>
+          <option value="20" selected>Show 20</option>
+          <option value="50">Show 50</option>
+          <option value="100">Show 100</option>
+          <option value="1000">Show 1000</option>
+          <option value="all">Show all</option>
+        </select>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
     </div>
   </div>
 </header>
@@ -416,10 +459,13 @@
   const CACHE_KEY = 'equipment_cache_v2';
   const CACHE_MAX_AGE = 24 * 60 * 60 * 1000;
   const SEARCH_DEBOUNCE_MS = 300;
+  const DEFAULT_LIMIT = 20;
 
   let items = [];
   let currentCategory = '';
   let currentSearch = '';
+  let currentLimit = DEFAULT_LIMIT;   // numeric or 'all'
+  let displayLimit = DEFAULT_LIMIT;   // how many items are currently visible (grows with "Load more")
   let lastUpdateTime = null;
   let nextRowNumber = 2;
   let searchDebounceTimer = null;
@@ -429,6 +475,7 @@
   const overlay = $('overlay');
   const sheet = overlay.querySelector('.sheet');
   const categorySelect = $('categorySelect');
+  const limitSelect = $('limitSelect');
   const confirmOverlay = $('confirmOverlay');
 
   // ========== Custom Confirm Dialog ==========
@@ -648,11 +695,8 @@
     }
   }
 
-  function render() {
-    items = items.filter(item => item && item.name && item.name.trim() !== '');
-
-    updateCategoryDropdown();
-
+  // Compute the filtered + sorted list (without applying the display limit yet)
+  function getFilteredList() {
     const q = currentSearch.trim().toLowerCase();
     let filtered = items.filter(it => {
       if (currentCategory && (it.category || '').trim() !== currentCategory) return false;
@@ -667,8 +711,35 @@
       return (a.name || '').toString().localeCompare((b.name || '').toString());
     });
 
+    return filtered;
+  }
+
+  function render() {
+    items = items.filter(item => item && item.name && item.name.trim() !== '');
+
+    updateCategoryDropdown();
+
+    const filtered = getFilteredList();
+    const totalFiltered = filtered.length;
+
+    // Apply display limit
+    const isUnlimited = currentLimit === 'all';
+    const visibleItems = isUnlimited ? filtered : filtered.slice(0, displayLimit);
+    const hasMore = !isUnlimited && totalFiltered > displayLimit;
+    const remaining = totalFiltered - displayLimit;
+
+    // Counters for header tabs (computed on full filtered set)
+    let cAll = 0, cOut = 0, cLow = 0, cOk = 0;
+    filtered.forEach(it => {
+      cAll++;
+      const s = statusOf(it);
+      if (s === 'out') cOut++;
+      else if (s === 'low') cLow++;
+      else cOk++;
+    });
+
     let html = '';
-    if (filtered.length === 0) {
+    if (totalFiltered === 0) {
       let emptyTitle = 'No equipment yet';
       let emptyMsg = 'Tap + to add your first item';
       if (items.length > 0) {
@@ -693,7 +764,7 @@
           <p>${emptyMsg}</p>
         </div>`;
     } else {
-      html = filtered.map(it => {
+      html = visibleItems.map(it => {
         const s = statusOf(it);
         const unit = it.unit ? ` ${it.unit}` : '';
         const metaParts = [];
@@ -709,6 +780,19 @@
             <div class="item-meta">${metaParts.join('')}</div>
           </div>`;
       }).join('');
+
+      // Load more button
+      if (hasMore) {
+        const nextBatch = Math.min(currentLimit, remaining);
+        html += `
+          <button class="load-more" id="loadMoreBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+            <span>Load more</span>
+            <span class="load-more-count">(${remaining} remaining)</span>
+          </button>`;
+      }
     }
 
     if (lastUpdateTime) {
@@ -716,6 +800,27 @@
     }
 
     listEl.innerHTML = html;
+
+    // Attach load more handler (if rendered)
+    const loadMoreBtn = $('loadMoreBtn');
+    if (loadMoreBtn) {
+      loadMoreBtn.addEventListener('click', handleLoadMore);
+    }
+  }
+
+  function handleLoadMore() {
+    // Grow the display limit by the current batch size
+    displayLimit += currentLimit;
+    render();
+
+    // Scroll the newly loaded "Load more" button into view if one still exists
+    // (keeps the user's place near the bottom of the list)
+    requestAnimationFrame(() => {
+      const newBtn = $('loadMoreBtn');
+      if (newBtn) {
+        newBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    });
   }
 
   function escapeHtml(s) {
@@ -732,6 +837,16 @@
 
   categorySelect.addEventListener('change', e => {
     currentCategory = e.target.value;
+    // Reset display limit when filters change
+    displayLimit = currentLimit === 'all' ? Infinity : currentLimit;
+    render();
+  });
+
+  limitSelect.addEventListener('change', e => {
+    const val = e.target.value;
+    currentLimit = val === 'all' ? 'all' : parseInt(val, 10);
+    // Reset display limit to the new limit
+    displayLimit = currentLimit === 'all' ? Infinity : currentLimit;
     render();
   });
 
@@ -741,6 +856,8 @@
     }
     searchDebounceTimer = setTimeout(() => {
       currentSearch = e.target.value;
+      // Reset display limit when search changes
+      displayLimit = currentLimit === 'all' ? Infinity : currentLimit;
       render();
     }, SEARCH_DEBOUNCE_MS);
   });

@@ -60,29 +60,49 @@
     position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
     width: 18px; height: 18px; color: var(--text-faint);
   }
-  .tabs {
-    display: flex; gap: 6px; overflow-x: auto;
-    scrollbar-width: none; padding-bottom: 2px;
-    justify-content: center;
+
+  /* Category Dropdown */
+  .category-select-wrapper {
+    position: relative;
+    margin-bottom: 10px;
   }
-  .tabs::-webkit-scrollbar { display: none; }
-  .tab {
-    padding: 7px 14px; border-radius: 999px;
-    background: var(--surface); border: 1px solid var(--border);
-    color: var(--text-dim); font-size: 14px; font-weight: 500;
-    cursor: pointer; white-space: nowrap;
-    display: flex; align-items: center; gap: 6px;
-    transition: all 0.15s;
+  .category-select-wrapper svg {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    color: var(--text-faint);
+    pointer-events: none;
   }
-  .tab .count {
-    font-size: 12px; color: var(--text-faint);
-    background: var(--surface-2); padding: 1px 7px; border-radius: 999px;
+  .category-select {
+    width: 100%;
+    padding: 11px 40px 11px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 500;
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    transition: border-color 0.15s;
   }
-  .tab.active {
-    background: var(--accent-soft); border-color: var(--accent);
-    color: var(--accent);
+  .category-select:focus {
+    border-color: var(--accent);
   }
-  .tab.active .count { background: transparent; color: var(--accent); }
+  .category-select option {
+    background: var(--surface);
+    color: var(--text);
+    padding: 8px;
+  }
+  .category-select.empty {
+    color: var(--text-faint);
+  }
 
   main { padding: 12px 16px; }
   .item {
@@ -263,11 +283,11 @@
       <input type="text" id="search" placeholder="Search equipment..." />
     </div>
 
-    <div class="tabs" id="tabs">
-      <button class="tab active" data-filter="all">All <span class="count" id="count-all">0</span></button>
-      <button class="tab" data-filter="out">Out <span class="count" id="count-out">0</span></button>
-      <button class="tab" data-filter="low">Low <span class="count" id="count-low">0</span></button>
-      <button class="tab" data-filter="ok">OK <span class="count" id="count-ok">0</span></button>
+    <div class="category-select-wrapper">
+      <select class="category-select" id="categorySelect">
+        <option value="">All categories</option>
+      </select>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
     </div>
   </div>
 </header>
@@ -333,10 +353,10 @@
   const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwKtyJJQkP0hV63zhTwnBX_zWJEZfu5Yp6IDr0JsyUEWXYECLqbDfKaJr_r9JSs12bh/exec';
   const CACHE_KEY = 'equipment_cache_v2';
   const CACHE_MAX_AGE = 24 * 60 * 60 * 1000;
-  const SEARCH_DEBOUNCE_MS = 800; // Adjust this value (in milliseconds) to tune search responsiveness
+  const SEARCH_DEBOUNCE_MS = 300;
 
   let items = [];
-  let currentFilter = 'all';
+  let currentCategory = ''; // '' means all categories
   let currentSearch = '';
   let lastUpdateTime = null;
   let nextRowNumber = 2;
@@ -346,6 +366,7 @@
   const listEl = $('list');
   const overlay = $('overlay');
   const sheet = overlay.querySelector('.sheet');
+  const categorySelect = $('categorySelect');
 
   function loadCache() {
     try {
@@ -494,25 +515,66 @@
     return s === 'out' ? 'Out' : s === 'low' ? 'Low' : 'OK';
   }
 
+  // Extract unique categories from items, sorted alphabetically
+  function getCategories() {
+    const cats = new Set();
+    items.forEach(it => {
+      if (it.category && it.category.trim() !== '') {
+        cats.add(it.category.trim());
+      }
+    });
+    return Array.from(cats).sort((a, b) => a.localeCompare(b));
+  }
+
+  // Rebuild the category dropdown options, preserving current selection if still valid
+  function updateCategoryDropdown() {
+    const categories = getCategories();
+    const currentValue = categorySelect.value;
+    
+    // Clear existing options
+    categorySelect.innerHTML = '';
+    
+    // Add "All categories" option
+    const allOption = document.createElement('option');
+    allOption.value = '';
+    allOption.textContent = 'All categories';
+    categorySelect.appendChild(allOption);
+    
+    // Add each category
+    categories.forEach(cat => {
+      const option = document.createElement('option');
+      option.value = cat;
+      option.textContent = cat;
+      categorySelect.appendChild(option);
+    });
+    
+    // Restore selection if still valid, otherwise reset to "All"
+    if (currentValue && categories.includes(currentValue)) {
+      categorySelect.value = currentValue;
+    } else {
+      categorySelect.value = '';
+      currentCategory = '';
+    }
+    
+    // Visual hint when no categories exist
+    if (categories.length === 0) {
+      categorySelect.classList.add('empty');
+    } else {
+      categorySelect.classList.remove('empty');
+    }
+  }
+
   function render() {
     items = items.filter(item => item && item.name && item.name.trim() !== '');
 
-    let cAll = 0, cOut = 0, cLow = 0, cOk = 0;
-    items.forEach(it => {
-      cAll++;
-      const s = statusOf(it);
-      if (s === 'out') cOut++;
-      else if (s === 'low') cLow++;
-      else cOk++;
-    });
-    $('count-all').textContent = cAll;
-    $('count-out').textContent = cOut;
-    $('count-low').textContent = cLow;
-    $('count-ok').textContent = cOk;
+    // Update the category dropdown with current categories
+    updateCategoryDropdown();
 
     const q = currentSearch.trim().toLowerCase();
     let filtered = items.filter(it => {
-      if (currentFilter !== 'all' && statusOf(it) !== currentFilter) return false;
+      // Filter by category
+      if (currentCategory && (it.category || '').trim() !== currentCategory) return false;
+      // Filter by search query
       if (!q) return true;
       return (it.name + ' ' + (it.category||'') + ' ' + (it.location||'')).toLowerCase().includes(q);
     });
@@ -526,14 +588,28 @@
 
     let html = '';
     if (filtered.length === 0) {
+      let emptyTitle = 'No equipment yet';
+      let emptyMsg = 'Tap + to add your first item';
+      if (items.length > 0) {
+        if (currentCategory && currentSearch) {
+          emptyTitle = 'Nothing matches';
+          emptyMsg = 'Try a different search or category.';
+        } else if (currentCategory) {
+          emptyTitle = 'No items in this category';
+          emptyMsg = 'Try selecting a different category.';
+        } else {
+          emptyTitle = 'Nothing matches';
+          emptyMsg = 'Try a different search.';
+        }
+      }
       html = `
         <div class="empty">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
             <path d="M3.3 7 12 12l8.7-5M12 22V12"/>
           </svg>
-          <h3>${items.length === 0 ? 'No equipment yet' : 'Nothing matches'}</h3>
-          <p>${items.length === 0 ? 'Tap + to add your first item' : 'Try a different search or filter.'}</p>
+          <h3>${emptyTitle}</h3>
+          <p>${emptyMsg}</p>
         </div>`;
     } else {
       html = filtered.map(it => {
@@ -573,22 +649,16 @@
     openEdit(item);
   });
 
-  $('tabs').addEventListener('click', e => {
-    const tab = e.target.closest('.tab');
-    if (!tab) return;
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    currentFilter = tab.dataset.filter;
+  // Category dropdown change handler
+  categorySelect.addEventListener('change', e => {
+    currentCategory = e.target.value;
     render();
   });
 
   $('search').addEventListener('input', e => {
-    // Clear the previous debounce timer
     if (searchDebounceTimer) {
       clearTimeout(searchDebounceTimer);
     }
-    
-    // Set a new timer to update search after the debounce delay
     searchDebounceTimer = setTimeout(() => {
       currentSearch = e.target.value;
       render();

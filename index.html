@@ -541,12 +541,11 @@
       const isInput = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT');
       
       if (isInput) {
-        // First back press: dismiss keyboard
+        // Input is focused - blur it and close the modal immediately
         active.blur();
-        // Restore the history state so the modal remains open for the next back press
-        history.pushState({ modal: true }, '');
+        closeSheetInternal();
       } else {
-        // Second back press: keyboard is already closed, so close the modal
+        // No input focused - just close the modal
         closeSheetInternal();
       }
     }

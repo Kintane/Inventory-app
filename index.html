@@ -48,14 +48,6 @@
     margin-bottom: 10px; position: relative;
   }
   h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
-  .icon-btn {
-    width: 40px; height: 40px; border-radius: 12px;
-    background: var(--surface); border: 1px solid var(--border);
-    color: var(--text); display: grid; place-items: center;
-    cursor: pointer; transition: background 0.15s;
-  }
-  .icon-btn:active { background: var(--surface-2); }
-  .icon-btn svg { width: 20px; height: 20px; }
   .search { position: relative; margin-bottom: 10px; }
   .search input {
     width: 100%; padding: 11px 14px 11px 40px;
@@ -274,20 +266,6 @@
   .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
   .btn-secondary { background: var(--surface-2); color: var(--text); }
   .btn-danger { background: var(--out-soft); color: var(--out); border-color: rgba(255,77,94,0.3); }
-  .menu {
-    position: absolute; top: 58px; right: 0;
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 12px; box-shadow: var(--shadow);
-    padding: 6px; min-width: 180px; display: none; z-index: 30;
-  }
-  .menu.open { display: block; animation: fadeIn 0.15s; }
-  .menu button {
-    display: block; width: 100%; text-align: left;
-    padding: 10px 12px; background: none; border: none;
-    color: var(--text); font-size: 14px; cursor: pointer;
-    border-radius: 8px;
-  }
-  .menu button:active { background: var(--surface-2); }
   .toast {
     position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
     background: var(--surface-2); color: var(--text);
@@ -316,12 +294,6 @@
   <div class="header-content">
     <div class="title-row">
       <h1>🧰 Equipment</h1>
-      <button class="icon-btn" id="menuBtn" aria-label="Menu">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
-      </button>
-      <div class="menu" id="menu">
-        <button id="reloadBtn">🔄 Refresh data</button>
-      </div>
     </div>
 
     <div class="search">
@@ -788,31 +760,6 @@
     }
   });
 
-  const menu = $('menu');
-  $('menuBtn').addEventListener('click', e => {
-    e.stopPropagation();
-    menu.classList.toggle('open');
-  });
-  document.addEventListener('click', e => {
-    if (!menu.contains(e.target) && e.target !== $('menuBtn')) menu.classList.remove('open');
-  });
-
-  $('reloadBtn').addEventListener('click', async () => {
-    menu.classList.remove('open');
-    toast('Refreshing...');
-    try {
-      const freshItems = await fetchFromSheets();
-      items = freshItems;
-      lastUpdateTime = Date.now();
-      nextRowNumber = Math.max(...items.map(i => i.rowNumber || 0), 1) + 1;
-      saveCache(items, lastUpdateTime);
-      render();
-      toast('Refreshed');
-    } catch (err) {
-      toast('Refresh failed: ' + err.message);
-    }
-  });
-
   let toastTimer;
   function toast(msg) {
     const t = $('toast');
@@ -824,7 +771,6 @@
 
   // ---------- Init ----------
   function init() {
-    // 1. Load cached data instantly (synchronous, no await)
     const cached = loadCache();
     if (cached && cached.items) {
       items = cached.items;
@@ -833,8 +779,6 @@
       render();
     }
 
-    // 2. Schedule fresh fetch after a short delay to avoid mobile browser throttling
-    //    This ensures the browser has finished rendering before we hit the network
     setTimeout(() => {
       loadAll(true, true).catch(err => {
         console.error('Initial background fetch failed:', err);
@@ -842,12 +786,10 @@
     }, 300);
   }
 
-  // 3. Backup: refresh when the tab becomes visible (handles bfcache, background tabs, etc.)
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
       const cached = loadCache();
       const age = cached && cached.timestamp ? Date.now() - cached.timestamp : Infinity;
-      // Only refresh if cache is older than 5 minutes to avoid excessive requests
       if (age > 5 * 60 * 1000) {
         loadAll(true, true).catch(err => {
           console.error('Visibility refresh failed:', err);
@@ -856,7 +798,6 @@
     }
   });
 
-  // 4. Backup: refresh when page is restored from bfcache (back/forward navigation)
   window.addEventListener('pageshow', (e) => {
     if (e.persisted) {
       loadAll(true, true).catch(err => {

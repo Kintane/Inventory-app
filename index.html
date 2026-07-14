@@ -61,6 +61,7 @@
     width: 18px; height: 18px; color: var(--text-faint);
   }
 
+  /* Filters row: category + limit side by side */
   .filters-row {
     display: flex;
     gap: 8px;
@@ -156,6 +157,7 @@
   .badge.low { background: var(--low-soft); color: var(--low); }
   .badge.ok  { background: var(--ok-soft);  color: var(--ok); }
 
+  /* Load more button */
   .load-more {
     display: flex;
     align-items: center;
@@ -462,8 +464,8 @@
   let items = [];
   let currentCategory = '';
   let currentSearch = '';
-  let currentLimit = DEFAULT_LIMIT;
-  let displayLimit = DEFAULT_LIMIT;
+  let currentLimit = DEFAULT_LIMIT;   // numeric or 'all'
+  let displayLimit = DEFAULT_LIMIT;   // how many items are currently visible (grows with "Load more")
   let lastUpdateTime = null;
   let nextRowNumber = 2;
   let searchDebounceTimer = null;
@@ -476,9 +478,7 @@
   const limitSelect = $('limitSelect');
   const confirmOverlay = $('confirmOverlay');
 
-  // ========== Modal History Management (Mobile Back Button) ==========
-  let isModalOpen = false;
-  let isConfirmOpen = false;
+  // ========== Custom Confirm Dialog ==========
   let confirmResolver = null;
 
   function showConfirm(title, message, okLabel = 'Delete') {
@@ -487,55 +487,24 @@
       $('confirmMessage').textContent = message;
       $('confirmOk').textContent = okLabel;
       confirmResolver = resolve;
-      history.pushState({ confirmModal: true }, '');
-      isConfirmOpen = true;
       confirmOverlay.classList.add('open');
     });
   }
 
-  function closeConfirmInternal(result) {
+  function closeConfirm(result) {
     confirmOverlay.classList.remove('open');
-    isConfirmOpen = false;
     if (confirmResolver) {
       confirmResolver(result);
       confirmResolver = null;
     }
   }
 
-  function closeConfirm(result) {
-    if (isConfirmOpen) {
-      history.back(); // Triggers popstate to close cleanly
-    } else {
-      closeConfirmInternal(result !== undefined ? result : false);
-    }
-  }
-
-  function closeSheetInternal() {
-    overlay.classList.remove('open');
-    isModalOpen = false;
-    // Force blur to ensure mobile keyboard closes immediately
-    if (document.activeElement && document.activeElement.blur) {
-      document.activeElement.blur();
-    }
-  }
-
-  function closeSheet() {
-    if (isModalOpen) {
-      history.back(); // Triggers popstate to close cleanly
-    } else {
-      closeSheetInternal();
-    }
-  }
-
-  // Intercept the browser back button
-  window.addEventListener('popstate', (e) => {
-    if (e.state && e.state.equipmentModal) {
-      closeSheetInternal();
-    } else if (e.state && e.state.confirmModal) {
-      closeConfirmInternal(false);
-    }
+  $('confirmCancel').addEventListener('click', () => closeConfirm(false));
+  $('confirmOk').addEventListener('click', () => closeConfirm(true));
+  confirmOverlay.addEventListener('click', (e) => {
+    if (e.target === confirmOverlay) closeConfirm(false);
   });
-  // ===================================================================
+  // ============================================
 
   function loadCache() {
     try {
@@ -726,6 +695,7 @@
     }
   }
 
+  // Compute the filtered + sorted list (without applying the display limit yet)
   function getFilteredList() {
     const q = currentSearch.trim().toLowerCase();
     let filtered = items.filter(it => {
@@ -752,10 +722,21 @@
     const filtered = getFilteredList();
     const totalFiltered = filtered.length;
 
+    // Apply display limit
     const isUnlimited = currentLimit === 'all';
     const visibleItems = isUnlimited ? filtered : filtered.slice(0, displayLimit);
     const hasMore = !isUnlimited && totalFiltered > displayLimit;
     const remaining = totalFiltered - displayLimit;
+
+    // Counters for header tabs (computed on full filtered set)
+    let cAll = 0, cOut = 0, cLow = 0, cOk = 0;
+    filtered.forEach(it => {
+      cAll++;
+      const s = statusOf(it);
+      if (s === 'out') cOut++;
+      else if (s === 'low') cLow++;
+      else cOk++;
+    });
 
     let html = '';
     if (totalFiltered === 0) {
@@ -800,6 +781,7 @@
           </div>`;
       }).join('');
 
+      // Load more button
       if (hasMore) {
         const nextBatch = Math.min(currentLimit, remaining);
         html += `
@@ -819,6 +801,7 @@
 
     listEl.innerHTML = html;
 
+    // Attach load more handler (if rendered)
     const loadMoreBtn = $('loadMoreBtn');
     if (loadMoreBtn) {
       loadMoreBtn.addEventListener('click', handleLoadMore);
@@ -826,9 +809,12 @@
   }
 
   function handleLoadMore() {
+    // Grow the display limit by the current batch size
     displayLimit += currentLimit;
     render();
 
+    // Scroll the newly loaded "Load more" button into view if one still exists
+    // (keeps the user's place near the bottom of the list)
     requestAnimationFrame(() => {
       const newBtn = $('loadMoreBtn');
       if (newBtn) {
@@ -851,6 +837,7 @@
 
   categorySelect.addEventListener('change', e => {
     currentCategory = e.target.value;
+    // Reset display limit when filters change
     displayLimit = currentLimit === 'all' ? Infinity : currentLimit;
     render();
   });
@@ -858,6 +845,7 @@
   limitSelect.addEventListener('change', e => {
     const val = e.target.value;
     currentLimit = val === 'all' ? 'all' : parseInt(val, 10);
+    // Reset display limit to the new limit
     displayLimit = currentLimit === 'all' ? Infinity : currentLimit;
     render();
   });
@@ -868,6 +856,7 @@
     }
     searchDebounceTimer = setTimeout(() => {
       currentSearch = e.target.value;
+      // Reset display limit when search changes
       displayLimit = currentLimit === 'all' ? Infinity : currentLimit;
       render();
     }, SEARCH_DEBOUNCE_MS);
@@ -889,14 +878,10 @@
     $('itemLocation').value = item ? (item.location || '') : '';
     $('deleteBtn').style.display = item ? 'block' : 'none';
     sheet.scrollTop = 0;
-    
-    // Push state to history so the back button closes this modal instead of the page
-    history.pushState({ equipmentModal: true }, '');
-    isModalOpen = true;
-    
     overlay.classList.add('open');
     setTimeout(() => $('itemName').focus(), 200);
   }
+  function closeSheet() { overlay.classList.remove('open'); }
 
   $('itemForm').addEventListener('submit', e => {
     e.preventDefault();
@@ -910,7 +895,7 @@
       location: $('itemLocation').value.trim(),
     };
     if (!data.name) return;
-    closeSheet(); // This will cleanly pop the history state
+    closeSheet();
     if (id && id.startsWith('row_')) {
       updateItem(items.find(i => i.id === id), data);
     } else {

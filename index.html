@@ -277,16 +277,31 @@
       overscroll-behavior-y: contain;
     }
     .sheet-handle { display: none; }
+    .sheet-layout {
+      grid-template-columns: 1fr;
+    }
+    .image-column {
+      order: -1;
+      margin-bottom: 16px;
+    }
   }
   @media (min-width: 640px) {
     .overlay.open { align-items: center; }
     .sheet {
-      width: 100%; max-width: 520px;
+      width: 100%; max-width: 640px;
       border-radius: 20px;
       padding: 22px 22px 24px;
       max-height: 92vh;
       overflow-y: auto;
       animation: popIn 0.25s cubic-bezier(0.2,0.8,0.2,1);
+    }
+    .sheet-layout {
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .image-column {
+      display: flex;
+      flex-direction: column;
     }
   }
   .sheet-handle {
@@ -301,6 +316,61 @@
     background: none; border: none; color: var(--text-dim);
     font-size: 24px; cursor: pointer; padding: 4px 8px;
   }
+  
+  /* New layout styles */
+  .sheet-layout {
+    display: grid;
+  }
+  .form-column {
+    display: flex;
+    flex-direction: column;
+  }
+  .image-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .image-container {
+    width: 100%;
+    aspect-ratio: 1;
+    background: var(--surface-2);
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+  .image-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: none;
+  }
+  .image-container img.loaded {
+    display: block;
+  }
+  .image-placeholder {
+    color: var(--text-faint);
+    font-size: 13px;
+    text-align: center;
+    padding: 20px;
+  }
+  .image-placeholder svg {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 8px;
+    opacity: 0.5;
+  }
+  .image-filename {
+    font-size: 12px;
+    color: var(--text-dim);
+    text-align: center;
+    word-break: break-all;
+    max-width: 100%;
+  }
+  
   .field { margin-bottom: 14px; }
   .field label {
     display: block; font-size: 13px; color: var(--text-dim);
@@ -400,34 +470,59 @@
     </h2>
     <form id="itemForm">
       <input type="hidden" id="itemId" />
-      <div class="field">
-        <label for="itemName">Name</label>
-        <input type="text" id="itemName" required placeholder="e.g. Safety gloves" />
-      </div>
-      <div class="row-2">
-        <div class="field">
-          <label for="itemQty">Current quantity</label>
-          <input type="number" id="itemQty" min="0" value="0" required />
+      
+      <div class="sheet-layout">
+        <!-- Left Column - Form Fields -->
+        <div class="form-column">
+          <div class="field">
+            <label for="itemName">Name</label>
+            <input type="text" id="itemName" required placeholder="e.g. Safety gloves" />
+          </div>
+          
+          <div class="field">
+            <label for="itemQty">Current quantity</label>
+            <input type="number" id="itemQty" min="0" value="0" required />
+          </div>
+          
+          <div class="field">
+            <label for="itemMin">Minimum threshold</label>
+            <input type="number" id="itemMin" min="0" value="5" required />
+          </div>
+          
+          <div class="field">
+            <label for="itemUnit">Unit</label>
+            <input type="text" id="itemUnit" placeholder="pcs, box, roll..." />
+          </div>
+          
+          <div class="field">
+            <label for="itemCategory">Category</label>
+            <input type="text" id="itemCategory" placeholder="PPE, Tools..." />
+          </div>
+          
+          <div class="field">
+            <label for="itemLocation">Location</label>
+            <input type="text" id="itemLocation" placeholder="Shelf A3, Warehouse..." />
+          </div>
         </div>
-        <div class="field">
-          <label for="itemMin">Minimum threshold</label>
-          <input type="number" id="itemMin" min="0" value="5" required />
+        
+        <!-- Right Column - Image -->
+        <div class="image-column">
+          <div class="image-container" id="imageContainer">
+            <img id="itemImage" alt="Equipment image" />
+            <div class="image-placeholder" id="imagePlaceholder">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+              <div>No image</div>
+            </div>
+          </div>
+          <div class="image-filename" id="imageFilename"></div>
+          <input type="hidden" id="itemImage" />
         </div>
       </div>
-      <div class="row-2">
-        <div class="field">
-          <label for="itemUnit">Unit</label>
-          <input type="text" id="itemUnit" placeholder="pcs, box, roll..." />
-        </div>
-        <div class="field">
-          <label for="itemCategory">Category</label>
-          <input type="text" id="itemCategory" placeholder="PPE, Tools..." />
-        </div>
-      </div>
-      <div class="field">
-        <label for="itemLocation">Location</label>
-        <input type="text" id="itemLocation" placeholder="Shelf A3, Warehouse..." />
-      </div>
+      
       <div class="actions">
         <button type="button" class="btn btn-danger" id="deleteBtn" style="display:none">Delete</button>
         <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
@@ -458,6 +553,7 @@
   const CACHE_MAX_AGE = 24 * 60 * 60 * 1000;
   const SEARCH_DEBOUNCE_MS = 300;
   const DEFAULT_LIMIT = 20;
+  const IMAGE_BASE_URL = 'https://kintane.github.io/Inventory-app/';
 
   let items = [];
   let currentCategory = '';
@@ -893,6 +989,34 @@
   $('cancelBtn').addEventListener('click', closeSheet);
   overlay.addEventListener('click', e => { if (e.target === overlay) closeSheet(); });
 
+  function loadImage(imageName) {
+    const img = $('itemImage');
+    const placeholder = $('imagePlaceholder');
+    const filenameEl = $('imageFilename');
+    
+    if (!imageName || imageName.trim() === '') {
+      img.classList.remove('loaded');
+      placeholder.style.display = 'block';
+      filenameEl.textContent = '';
+      return;
+    }
+    
+    const imageUrl = IMAGE_BASE_URL + imageName.trim();
+    img.src = imageUrl;
+    filenameEl.textContent = imageName.trim();
+    
+    img.onload = () => {
+      img.classList.add('loaded');
+      placeholder.style.display = 'none';
+    };
+    
+    img.onerror = () => {
+      img.classList.remove('loaded');
+      placeholder.style.display = 'block';
+      filenameEl.textContent = imageName.trim() + ' (not found)';
+    };
+  }
+
   function openEdit(item) {
     $('sheetTitle').textContent = item ? 'Edit equipment' : 'Add equipment';
     $('itemId').value = item ? item.id : '';
@@ -902,7 +1026,12 @@
     $('itemUnit').value = item ? (item.unit || '') : '';
     $('itemCategory').value = item ? (item.category || '') : '';
     $('itemLocation').value = item ? (item.location || '') : '';
+    $('itemImage').value = item ? (item.image || '') : '';
     $('deleteBtn').style.display = item ? 'block' : 'none';
+    
+    // Load image if exists
+    loadImage(item ? item.image : '');
+    
     sheet.scrollTop = 0;
     
     // Push state to history so the back button closes this modal instead of the page
@@ -923,6 +1052,7 @@
       unit: $('itemUnit').value.trim(),
       category: $('itemCategory').value.trim(),
       location: $('itemLocation').value.trim(),
+      image: $('itemImage').value.trim()
     };
     if (!data.name) return;
     

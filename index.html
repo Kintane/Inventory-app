@@ -178,7 +178,7 @@
   .image-container {
     flex: 1;
     width: 100%;
-    aspect-ratio: 4/3;
+    aspect-ratio: 16/9;
     background: var(--surface-2);
     border: 2px dashed var(--border);
     border-radius: 12px;
@@ -186,7 +186,6 @@
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    margin-bottom: 8px;
     position: relative;
   }
   .image-container img { 
@@ -198,7 +197,6 @@
   .image-container img.loaded { display: block; }
   .image-placeholder { color: var(--text-faint); font-size: 13px; text-align: center; padding: 20px; }
   .image-placeholder svg { width: 48px; height: 48px; margin-bottom: 8px; opacity: 0.5; }
-  .image-filename { font-size: 12px; color: var(--text-dim); text-align: center; word-break: break-all; max-width: 100%; }
   
   .qty-fields-column {
     display: flex;
@@ -345,7 +343,6 @@
               <div>No image</div>
             </div>
           </div>
-          <div class="image-filename" id="imageFilename"></div>
           <input type="hidden" id="itemImageFile" />
         </div>
         
@@ -744,18 +741,15 @@
   function loadImage(imageName) {
     const img = $('itemImageDisplay');
     const placeholder = $('imagePlaceholder');
-    const filenameEl = $('imageFilename');
     
     if (!imageName || imageName.trim() === '') {
       img.classList.remove('loaded');
       placeholder.style.display = 'block';
-      filenameEl.textContent = '';
       return;
     }
     
     const imageUrl = IMAGE_BASE_URL + imageName.trim();
     img.src = imageUrl;
-    filenameEl.textContent = imageName.trim();
     
     img.onload = () => {
       img.classList.add('loaded');
@@ -765,7 +759,6 @@
     img.onerror = () => {
       img.classList.remove('loaded');
       placeholder.style.display = 'block';
-      filenameEl.textContent = imageName.trim() + ' (not found)';
     };
   }
 

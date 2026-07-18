@@ -160,10 +160,8 @@
   }
   .close-btn { background: none; border: none; color: var(--text-dim); font-size: 24px; cursor: pointer; padding: 4px 8px; }
   
-  /* New layout structure */
   .name-field { margin-bottom: 14px; }
   
-  /* Row 2: Image (2/3) + Qty/Min/Unit (1/3) */
   .image-qty-row {
     display: grid;
     grid-template-columns: 2fr 1fr;
@@ -180,7 +178,7 @@
   .image-container {
     flex: 1;
     width: 100%;
-    aspect-ratio: 1;
+    aspect-ratio: 4/3;
     background: var(--surface-2);
     border: 2px dashed var(--border);
     border-radius: 12px;
@@ -236,7 +234,6 @@
   }
   .compact-field input:focus { border-color: var(--accent); }
   
-  /* Row 3: Category + Location */
   .details-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -406,7 +403,7 @@
 
 <script>
 (() => {
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwKtyJJQkP0hV63zhTwnBX_zWJEZfu5Yp6IDr0JsyUEWXYECLqbDfKaJr_r9JSs12bh/exec';
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyqZbjadwHaUfqiAc7e-GL-NvrclpwcMERM-EtSNLQvL-yGZbmRjLaG_Rh7KL3aEfrgMg/exec';
   const CACHE_KEY = 'equipment_cache_v2';
   const CACHE_MAX_AGE = 24 * 60 * 60 * 1000;
   const SEARCH_DEBOUNCE_MS = 300;

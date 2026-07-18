@@ -145,8 +145,6 @@
       overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain;
     }
     .sheet-handle { display: none; }
-    .sheet-layout { grid-template-columns: 1fr; }
-    .image-column { order: -1; margin-bottom: 16px; }
   }
   @media (min-width: 640px) {
     .overlay.open { align-items: center; }
@@ -154,8 +152,6 @@
       width: 100%; max-width: 640px; border-radius: 20px; padding: 22px 22px 24px;
       max-height: 92vh; overflow-y: auto; animation: popIn 0.25s cubic-bezier(0.2,0.8,0.2,1);
     }
-    .sheet-layout { grid-template-columns: 1fr 1fr; gap: 20px; }
-    .image-column { display: flex; flex-direction: column; }
   }
   .sheet-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 14px; }
   .sheet h2 {
@@ -164,14 +160,39 @@
   }
   .close-btn { background: none; border: none; color: var(--text-dim); font-size: 24px; cursor: pointer; padding: 4px 8px; }
   
-  .sheet-layout { display: grid; }
-  .form-column { display: flex; flex-direction: column; }
-  .image-column { display: flex; flex-direction: column; align-items: center; }
+  /* New layout structure */
+  .name-field { margin-bottom: 14px; }
+  
+  .qty-image-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  
+  .qty-column {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  
+  .image-column {
+    display: flex;
+    flex-direction: column;
+  }
+  
   .image-container {
-    width: 100%; aspect-ratio: 1; background: var(--surface-2);
-    border: 2px dashed var(--border); border-radius: 12px;
-    display: flex; align-items: center; justify-content: center;
-    overflow: hidden; margin-bottom: 12px; position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    background: var(--surface-2);
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    margin-bottom: 8px;
+    position: relative;
   }
   .image-container img { 
     width: 100%; 
@@ -184,6 +205,13 @@
   .image-placeholder svg { width: 48px; height: 48px; margin-bottom: 8px; opacity: 0.5; }
   .image-filename { font-size: 12px; color: var(--text-dim); text-align: center; word-break: break-all; max-width: 100%; }
   
+  .details-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  
   .field { margin-bottom: 14px; }
   .field label { display: block; font-size: 13px; color: var(--text-dim); margin-bottom: 6px; font-weight: 500; }
   .field input, .field select {
@@ -192,6 +220,13 @@
     outline: none; transition: border-color 0.15s;
   }
   .field input:focus, .field select:focus { border-color: var(--accent); }
+  
+  /* Remove bottom margin from fields in rows */
+  .qty-column .field,
+  .details-row .field {
+    margin-bottom: 0;
+  }
+  
   .actions { display: flex; gap: 10px; margin-top: 18px; }
   .btn {
     flex: 1; padding: 13px; border-radius: 12px; font-size: 15px; font-weight: 600;
@@ -263,13 +298,17 @@
     <form id="itemForm">
       <input type="hidden" id="itemId" />
       
-      <div class="sheet-layout">
-        <!-- Left Column - Form Fields -->
-        <div class="form-column">
-          <div class="field">
-            <label for="itemName">Name</label>
-            <input type="text" id="itemName" required placeholder="e.g. Safety gloves" />
-          </div>
+      <!-- 1. Name field - full width at top -->
+      <div class="name-field">
+        <div class="field">
+          <label for="itemName">Name</label>
+          <input type="text" id="itemName" required placeholder="e.g. Safety gloves" />
+        </div>
+      </div>
+      
+      <!-- 2. Quantity/Min on left, Image on right -->
+      <div class="qty-image-row">
+        <div class="qty-column">
           <div class="field">
             <label for="itemQty">Current quantity</label>
             <input type="number" id="itemQty" min="0" value="0" required />
@@ -278,21 +317,8 @@
             <label for="itemMin">Minimum threshold</label>
             <input type="number" id="itemMin" min="0" value="5" required />
           </div>
-          <div class="field">
-            <label for="itemUnit">Unit</label>
-            <input type="text" id="itemUnit" placeholder="pcs, box, roll..." />
-          </div>
-          <div class="field">
-            <label for="itemCategory">Category</label>
-            <input type="text" id="itemCategory" placeholder="PPE, Tools..." />
-          </div>
-          <div class="field">
-            <label for="itemLocation">Location</label>
-            <input type="text" id="itemLocation" placeholder="Shelf A3, Warehouse..." />
-          </div>
         </div>
         
-        <!-- Right Column - Image -->
         <div class="image-column">
           <div class="image-container" id="imageContainer">
             <img id="itemImageDisplay" alt="Equipment image" />
@@ -310,6 +336,23 @@
         </div>
       </div>
       
+      <!-- 3. Unit, Category, Location - all on one row -->
+      <div class="details-row">
+        <div class="field">
+          <label for="itemUnit">Unit</label>
+          <input type="text" id="itemUnit" placeholder="pcs, box, roll..." />
+        </div>
+        <div class="field">
+          <label for="itemCategory">Category</label>
+          <input type="text" id="itemCategory" placeholder="PPE, Tools..." />
+        </div>
+        <div class="field">
+          <label for="itemLocation">Location</label>
+          <input type="text" id="itemLocation" placeholder="Shelf A3, Warehouse..." />
+        </div>
+      </div>
+      
+      <!-- 4. Action buttons -->
       <div class="actions">
         <button type="button" class="btn btn-danger" id="deleteBtn" style="display:none">Delete</button>
         <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
@@ -335,7 +378,7 @@
 
 <script>
 (() => {
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyqZbjadwHaUfqiAc7e-GL-NvrclpwcMERM-EtSNLQvL-yGZbmRjLaG_Rh7KL3aEfrgMg/exec';
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwKtyJJQkP0hV63zhTwnBX_zWJEZfu5Yp6IDr0JsyUEWXYECLqbDfKaJr_r9JSs12bh/exec';
   const CACHE_KEY = 'equipment_cache_v2';
   const CACHE_MAX_AGE = 24 * 60 * 60 * 1000;
   const SEARCH_DEBOUNCE_MS = 300;
@@ -446,13 +489,6 @@
     const data = await parseResponse(response);
     if (data.error) throw new Error(data.error);
     if (!Array.isArray(data)) throw new Error('Invalid data');
-    
-    // DEBUG: Log the raw data from sheets
-    console.log('📊 Raw data from Google Sheets:', data);
-    if (data.length > 0) {
-      console.log('🔍 First item structure:', data[0]);
-    }
-    
     return data.map(item => ({ id: 'row_' + item.rowNumber, ...item }));
   }
 
@@ -685,10 +721,7 @@
     const placeholder = $('imagePlaceholder');
     const filenameEl = $('imageFilename');
     
-    console.log('🖼️ loadImage called with:', imageName);
-    
     if (!imageName || imageName.trim() === '') {
-      console.log('⚠️ No image name provided');
       img.classList.remove('loaded');
       placeholder.style.display = 'block';
       filenameEl.textContent = '';
@@ -696,19 +729,15 @@
     }
     
     const imageUrl = IMAGE_BASE_URL + imageName.trim();
-    console.log('🔗 Image URL:', imageUrl);
-    
     img.src = imageUrl;
     filenameEl.textContent = imageName.trim();
     
     img.onload = () => {
-      console.log('✅ Image loaded successfully:', imageUrl);
       img.classList.add('loaded');
       placeholder.style.display = 'none';
     };
     
-    img.onerror = (e) => {
-      console.error('❌ Image failed to load:', imageUrl, e);
+    img.onerror = () => {
       img.classList.remove('loaded');
       placeholder.style.display = 'block';
       filenameEl.textContent = imageName.trim() + ' (not found)';
@@ -716,7 +745,6 @@
   }
 
   function openEdit(item) {
-    console.log('📝 Opening edit for item:', item);
     $('sheetTitle').textContent = item ? 'Edit equipment' : 'Add equipment';
     $('itemId').value = item ? item.id : '';
     $('itemName').value = item ? item.name : '';
@@ -725,14 +753,10 @@
     $('itemUnit').value = item ? (item.unit || '') : '';
     $('itemCategory').value = item ? (item.category || '') : '';
     $('itemLocation').value = item ? (item.location || '') : '';
-    
-    const imageValue = item ? (item.image || '') : '';
-    console.log('🖼️ Image value from item:', imageValue);
-    
-    $('itemImageFile').value = imageValue;
+    $('itemImageFile').value = item ? (item.image || '') : '';
     $('deleteBtn').style.display = item ? 'block' : 'none';
     
-    loadImage(imageValue);
+    loadImage(item ? item.image : '');
     
     sheet.scrollTop = 0;
     history.pushState({ modal: true }, '');

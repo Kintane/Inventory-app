@@ -171,9 +171,14 @@
     width: 100%; aspect-ratio: 1; background: var(--surface-2);
     border: 2px dashed var(--border); border-radius: 12px;
     display: flex; align-items: center; justify-content: center;
-    overflow: hidden; margin-bottom: 12px;
+    overflow: hidden; margin-bottom: 12px; position: relative;
   }
-  .image-container img { width: 100%; height: 100%; object-fit: cover; display: none; }
+  .image-container img { 
+    width: 100%; 
+    height: 100%; 
+    object-fit: cover; 
+    display: none;
+  }
   .image-container img.loaded { display: block; }
   .image-placeholder { color: var(--text-faint); font-size: 13px; text-align: center; padding: 20px; }
   .image-placeholder svg { width: 48px; height: 48px; margin-bottom: 8px; opacity: 0.5; }
@@ -301,7 +306,6 @@
             </div>
           </div>
           <div class="image-filename" id="imageFilename"></div>
-          <!-- FIXED: Renamed from itemImage to itemImageFile to avoid ID collision with the <img> tag -->
           <input type="hidden" id="itemImageFile" />
         </div>
       </div>
@@ -442,6 +446,13 @@
     const data = await parseResponse(response);
     if (data.error) throw new Error(data.error);
     if (!Array.isArray(data)) throw new Error('Invalid data');
+    
+    // DEBUG: Log the raw data from sheets
+    console.log('📊 Raw data from Google Sheets:', data);
+    if (data.length > 0) {
+      console.log('🔍 First item structure:', data[0]);
+    }
+    
     return data.map(item => ({ id: 'row_' + item.rowNumber, ...item }));
   }
 
@@ -674,7 +685,10 @@
     const placeholder = $('imagePlaceholder');
     const filenameEl = $('imageFilename');
     
+    console.log('🖼️ loadImage called with:', imageName);
+    
     if (!imageName || imageName.trim() === '') {
+      console.log('⚠️ No image name provided');
       img.classList.remove('loaded');
       placeholder.style.display = 'block';
       filenameEl.textContent = '';
@@ -682,15 +696,19 @@
     }
     
     const imageUrl = IMAGE_BASE_URL + imageName.trim();
+    console.log('🔗 Image URL:', imageUrl);
+    
     img.src = imageUrl;
     filenameEl.textContent = imageName.trim();
     
     img.onload = () => {
+      console.log('✅ Image loaded successfully:', imageUrl);
       img.classList.add('loaded');
       placeholder.style.display = 'none';
     };
     
-    img.onerror = () => {
+    img.onerror = (e) => {
+      console.error('❌ Image failed to load:', imageUrl, e);
       img.classList.remove('loaded');
       placeholder.style.display = 'block';
       filenameEl.textContent = imageName.trim() + ' (not found)';
@@ -698,6 +716,7 @@
   }
 
   function openEdit(item) {
+    console.log('📝 Opening edit for item:', item);
     $('sheetTitle').textContent = item ? 'Edit equipment' : 'Add equipment';
     $('itemId').value = item ? item.id : '';
     $('itemName').value = item ? item.name : '';
@@ -707,11 +726,13 @@
     $('itemCategory').value = item ? (item.category || '') : '';
     $('itemLocation').value = item ? (item.location || '') : '';
     
-    // FIXED: Use itemImageFile instead of itemImage
-    $('itemImageFile').value = item ? (item.image || '') : '';
+    const imageValue = item ? (item.image || '') : '';
+    console.log('🖼️ Image value from item:', imageValue);
+    
+    $('itemImageFile').value = imageValue;
     $('deleteBtn').style.display = item ? 'block' : 'none';
     
-    loadImage(item ? item.image : '');
+    loadImage(imageValue);
     
     sheet.scrollTop = 0;
     history.pushState({ modal: true }, '');
@@ -730,7 +751,6 @@
       unit: $('itemUnit').value.trim(),
       category: $('itemCategory').value.trim(),
       location: $('itemLocation').value.trim(),
-      // FIXED: Read from itemImageFile
       image: $('itemImageFile').value.trim()
     };
     if (!data.name) return;

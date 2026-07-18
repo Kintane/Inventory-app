@@ -163,17 +163,13 @@
   /* New layout structure */
   .name-field { margin-bottom: 14px; }
   
-  .qty-image-row {
+  /* Row 2: Image (2/3) + Qty/Min/Unit (1/3) */
+  .image-qty-row {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 2fr 1fr;
     gap: 12px;
     margin-bottom: 14px;
-  }
-  
-  .qty-column {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
+    align-items: stretch;
   }
   
   .image-column {
@@ -182,6 +178,7 @@
   }
   
   .image-container {
+    flex: 1;
     width: 100%;
     aspect-ratio: 1;
     background: var(--surface-2);
@@ -205,9 +202,44 @@
   .image-placeholder svg { width: 48px; height: 48px; margin-bottom: 8px; opacity: 0.5; }
   .image-filename { font-size: 12px; color: var(--text-dim); text-align: center; word-break: break-all; max-width: 100%; }
   
+  .qty-fields-column {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .compact-field {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+  .compact-field label {
+    display: block;
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .compact-field input {
+    width: 100%;
+    padding: 10px 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.15s;
+    flex: 1;
+  }
+  .compact-field input:focus { border-color: var(--accent); }
+  
+  /* Row 3: Category + Location */
   .details-row {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: 10px;
     margin-bottom: 14px;
   }
@@ -221,11 +253,7 @@
   }
   .field input:focus, .field select:focus { border-color: var(--accent); }
   
-  /* Remove bottom margin from fields in rows */
-  .qty-column .field,
-  .details-row .field {
-    margin-bottom: 0;
-  }
+  .details-row .field { margin-bottom: 0; }
   
   .actions { display: flex; gap: 10px; margin-top: 18px; }
   .btn {
@@ -298,7 +326,7 @@
     <form id="itemForm">
       <input type="hidden" id="itemId" />
       
-      <!-- 1. Name field - full width at top -->
+      <!-- Row 1: Name (full width) -->
       <div class="name-field">
         <div class="field">
           <label for="itemName">Name</label>
@@ -306,19 +334,8 @@
         </div>
       </div>
       
-      <!-- 2. Quantity/Min on left, Image on right -->
-      <div class="qty-image-row">
-        <div class="qty-column">
-          <div class="field">
-            <label for="itemQty">Current quantity</label>
-            <input type="number" id="itemQty" min="0" value="0" required />
-          </div>
-          <div class="field">
-            <label for="itemMin">Minimum threshold</label>
-            <input type="number" id="itemMin" min="0" value="5" required />
-          </div>
-        </div>
-        
+      <!-- Row 2: Image (2/3 left) + Qty/Min/Unit (1/3 right) -->
+      <div class="image-qty-row">
         <div class="image-column">
           <div class="image-container" id="imageContainer">
             <img id="itemImageDisplay" alt="Equipment image" />
@@ -334,25 +351,36 @@
           <div class="image-filename" id="imageFilename"></div>
           <input type="hidden" id="itemImageFile" />
         </div>
+        
+        <div class="qty-fields-column">
+          <div class="compact-field">
+            <label for="itemQty">Qty</label>
+            <input type="number" id="itemQty" min="0" value="0" required />
+          </div>
+          <div class="compact-field">
+            <label for="itemMin">Min</label>
+            <input type="number" id="itemMin" min="0" value="5" required />
+          </div>
+          <div class="compact-field">
+            <label for="itemUnit">Unit</label>
+            <input type="text" id="itemUnit" placeholder="pcs" />
+          </div>
+        </div>
       </div>
       
-      <!-- 3. Unit, Category, Location - all on one row -->
+      <!-- Row 3: Category + Location -->
       <div class="details-row">
-        <div class="field">
-          <label for="itemUnit">Unit</label>
-          <input type="text" id="itemUnit" placeholder="pcs, box, roll..." />
-        </div>
         <div class="field">
           <label for="itemCategory">Category</label>
           <input type="text" id="itemCategory" placeholder="PPE, Tools..." />
         </div>
         <div class="field">
           <label for="itemLocation">Location</label>
-          <input type="text" id="itemLocation" placeholder="Shelf A3, Warehouse..." />
+          <input type="text" id="itemLocation" placeholder="Shelf A3..." />
         </div>
       </div>
       
-      <!-- 4. Action buttons -->
+      <!-- Row 4: Action buttons -->
       <div class="actions">
         <button type="button" class="btn btn-danger" id="deleteBtn" style="display:none">Delete</button>
         <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>

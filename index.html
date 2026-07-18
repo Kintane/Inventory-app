@@ -8,409 +8,204 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   :root {
-    --bg: #0b0b0e;
-    --surface: #16161b;
-    --surface-2: #1f1f26;
-    --border: #2a2a33;
-    --text: #ececf1;
-    --text-dim: #9a9aa6;
-    --text-faint: #6b6b76;
-    --accent: #7c83ff;
-    --accent-soft: rgba(124,131,255,0.15);
-    --ok: #3ddc84;
-    --ok-soft: rgba(61,220,132,0.12);
-    --low: #ffaa33;
-    --low-soft: rgba(255,170,51,0.12);
-    --out: #ff4d5e;
-    --out-soft: rgba(255,77,94,0.14);
+    --bg: #0b0b0e; --surface: #16161b; --surface-2: #1f1f26; --border: #2a2a33;
+    --text: #ececf1; --text-dim: #9a9aa6; --text-faint: #6b6b76; --accent: #7c83ff;
+    --accent-soft: rgba(124,131,255,0.15); --ok: #3ddc84; --ok-soft: rgba(61,220,132,0.12);
+    --low: #ffaa33; --low-soft: rgba(255,170,51,0.12); --out: #ff4d5e; --out-soft: rgba(255,77,94,0.14);
     --shadow: 0 10px 30px rgba(0,0,0,0.4);
   }
   html, body {
-    background: var(--bg);
-    color: var(--text);
+    background: var(--bg); color: var(--text);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    font-size: 16px;
-    min-height: 100vh;
-    overscroll-behavior-y: auto;
+    font-size: 16px; min-height: 100vh; overscroll-behavior-y: auto;
   }
   body { padding-bottom: 100px; }
   header {
-    position: sticky; top: 0; z-index: 10;
-    background: rgba(11,11,14,0.85);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    border-bottom: 1px solid var(--border);
-    padding: 14px 16px 10px;
+    position: sticky; top: 0; z-index: 10; background: rgba(11,11,14,0.85);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border); padding: 14px 16px 10px;
   }
   .header-content { max-width: 720px; margin: 0 auto; }
-  .title-row {
-    display: flex; align-items: center; justify-content: center;
-    margin-bottom: 10px; position: relative;
-  }
+  .title-row { display: flex; align-items: center; justify-content: center; margin-bottom: 10px; position: relative; }
   h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
   .search { position: relative; margin-bottom: 10px; }
   .search input {
-    width: 100%; padding: 11px 14px 11px 40px;
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 12px; color: var(--text); font-size: 16px;
-    outline: none; transition: border-color 0.15s;
+    width: 100%; padding: 11px 14px 11px 40px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 12px; color: var(--text);
+    font-size: 16px; outline: none; transition: border-color 0.15s;
   }
   .search input:focus { border-color: var(--accent); }
   .search svg {
     position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
     width: 18px; height: 18px; color: var(--text-faint);
   }
-
-  .filters-row {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 10px;
-  }
-  .filter-select-wrapper {
-    position: relative;
-    flex: 1;
-    min-width: 0;
-  }
+  .filters-row { display: flex; gap: 8px; margin-bottom: 10px; }
+  .filter-select-wrapper { position: relative; flex: 1; min-width: 0; }
   .filter-select-wrapper svg {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 14px;
-    height: 14px;
-    color: var(--text-faint);
-    pointer-events: none;
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    width: 14px; height: 14px; color: var(--text-faint); pointer-events: none;
   }
   .filter-select {
-    width: 100%;
-    padding: 10px 34px 10px 12px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    color: var(--text);
-    font-size: 14px;
-    font-weight: 500;
-    outline: none;
-    cursor: pointer;
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    transition: border-color 0.15s;
+    width: 100%; padding: 10px 34px 10px 12px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 12px; color: var(--text);
+    font-size: 14px; font-weight: 500; outline: none; cursor: pointer;
+    appearance: none; -webkit-appearance: none; -moz-appearance: none; transition: border-color 0.15s;
   }
   .filter-select:focus { border-color: var(--accent); }
-  .filter-select option {
-    background: var(--surface);
-    color: var(--text);
-    padding: 8px;
-  }
+  .filter-select option { background: var(--surface); color: var(--text); padding: 8px; }
   .filter-select.empty { color: var(--text-faint); }
 
   main { padding: 12px 16px; }
   .item {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 10px 12px;
-    margin-bottom: 8px;
-    cursor: pointer;
-    transition: transform 0.1s;
-    animation: fadeIn 0.2s ease;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 10px 12px; margin-bottom: 8px; cursor: pointer;
+    transition: transform 0.1s; animation: fadeIn 0.2s ease;
   }
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(4px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
   .item:active { transform: scale(0.99); }
   .item.status-out { border-color: rgba(255,77,94,0.35); background: linear-gradient(180deg, var(--out-soft), var(--surface)); }
   .item.status-low  { border-color: rgba(255,170,51,0.3);  background: linear-gradient(180deg, var(--low-soft), var(--surface)); }
   .item-name {
-    font-size: 15px; font-weight: 600;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    display: flex; align-items: center; gap: 8px;
-    margin-bottom: 4px;
+    font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;
   }
-  .item-name-text {
-    flex: 1; min-width: 0;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  }
+  .item-name-text { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .item-meta {
-    font-size: 13px; color: var(--text-dim);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    display: flex; align-items: center; gap: 6px;
+    font-size: 13px; color: var(--text-dim); white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px;
   }
   .item-meta .sep { color: var(--text-faint); }
-  .item-meta .qty {
-    font-weight: 600;
-    padding: 1px 6px; border-radius: 6px;
-  }
+  .item-meta .qty { font-weight: 600; padding: 1px 6px; border-radius: 6px; }
   .item-meta .qty.out { color: var(--out); background: var(--out-soft); }
   .item-meta .qty.low { color: var(--low); background: var(--low-soft); }
   .item-meta .qty.ok  { color: var(--ok);  background: var(--ok-soft); }
   .badge {
-    display: inline-block; font-size: 10px; font-weight: 600;
-    padding: 2px 7px; border-radius: 999px;
-    vertical-align: middle; text-transform: uppercase; letter-spacing: 0.5px;
-    flex-shrink: 0;
+    display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 7px;
+    border-radius: 999px; vertical-align: middle; text-transform: uppercase;
+    letter-spacing: 0.5px; flex-shrink: 0;
   }
   .badge.out { background: var(--out-soft); color: var(--out); }
   .badge.low { background: var(--low-soft); color: var(--low); }
   .badge.ok  { background: var(--ok-soft);  color: var(--ok); }
 
   .load-more {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    width: 100%;
-    padding: 14px;
-    margin: 12px 0 8px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    color: var(--text-dim);
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.15s;
-    animation: fadeIn 0.25s ease;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; padding: 14px; margin: 12px 0 8px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 14px; color: var(--text-dim);
+    font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.15s; animation: fadeIn 0.25s ease;
   }
-  .load-more:hover {
-    background: var(--surface-2);
-    color: var(--text);
-    border-color: var(--accent);
-  }
+  .load-more:hover { background: var(--surface-2); color: var(--text); border-color: var(--accent); }
   .load-more:active { transform: scale(0.98); }
-  .load-more svg {
-    width: 16px;
-    height: 16px;
-  }
-  .load-more-count {
-    color: var(--text-faint);
-    font-weight: 500;
-    font-size: 13px;
-  }
+  .load-more svg { width: 16px; height: 16px; }
+  .load-more-count { color: var(--text-faint); font-weight: 500; font-size: 13px; }
 
-  .empty {
-    text-align: center; padding: 60px 20px; color: var(--text-dim);
-  }
+  .empty { text-align: center; padding: 60px 20px; color: var(--text-dim); }
   .empty svg { width: 56px; height: 56px; margin-bottom: 14px; opacity: 0.4; }
   .empty h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; color: var(--text); }
   .empty p { font-size: 14px; }
+  
   .fab {
-    position: fixed; bottom: 22px; right: 22px;
-    width: 58px; height: 58px; border-radius: 18px;
-    background: var(--accent); color: white;
-    border: none; cursor: pointer;
+    position: fixed; bottom: 22px; right: 22px; width: 58px; height: 58px; border-radius: 18px;
+    background: var(--accent); color: white; border: none; cursor: pointer;
     box-shadow: var(--shadow), 0 0 0 1px rgba(124,131,255,0.3);
-    display: grid; place-items: center;
-    transition: transform 0.15s;
-    z-index: 20;
+    display: grid; place-items: center; transition: transform 0.15s; z-index: 20;
   }
   .fab:active { transform: scale(0.94); }
   .fab svg { width: 26px; height: 26px; }
 
   .overlay {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,0.6);
-    z-index: 50;
-    display: none;
-    justify-content: center;
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 50;
+    display: none; justify-content: center; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
   }
   .overlay.open { display: flex; animation: fadeIn 0.2s; }
 
   .confirm-overlay {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,0.6);
-    z-index: 60;
-    display: none;
-    justify-content: center;
-    align-items: center;
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 60;
+    display: none; justify-content: center; align-items: center;
+    backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
   }
   .confirm-overlay.open { display: flex; animation: fadeIn 0.15s; }
   .confirm-dialog {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 22px;
-    width: 90%;
-    max-width: 380px;
-    box-shadow: var(--shadow);
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    padding: 22px; width: 90%; max-width: 380px; box-shadow: var(--shadow);
     animation: popIn 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
   }
-  @keyframes popIn {
-    from { opacity: 0; transform: scale(0.92); }
-    to { opacity: 1; transform: scale(1); }
-  }
-  .confirm-dialog h3 {
-    font-size: 17px;
-    font-weight: 700;
-    margin-bottom: 8px;
-    color: var(--text);
-  }
-  .confirm-dialog p {
-    font-size: 14px;
-    color: var(--text-dim);
-    margin-bottom: 20px;
-    line-height: 1.5;
-  }
-  .confirm-dialog .actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 0;
-  }
+  @keyframes popIn { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
+  .confirm-dialog h3 { font-size: 17px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
+  .confirm-dialog p { font-size: 14px; color: var(--text-dim); margin-bottom: 20px; line-height: 1.5; }
+  .confirm-dialog .actions { display: flex; gap: 10px; margin-top: 0; }
 
   @media (max-width: 639px) {
     .overlay.open { align-items: flex-start; }
     .sheet {
-      width: 100%; height: 100vh; height: 100dvh;
-      max-height: 100vh; max-height: 100dvh;
-      border-radius: 0;
-      padding: 18px 18px 24px;
+      width: 100%; height: 100vh; height: 100dvh; max-height: 100vh; max-height: 100dvh;
+      border-radius: 0; padding: 18px 18px 24px;
       padding-top: calc(18px + env(safe-area-inset-top, 0px));
       padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
-      overflow-y: auto; 
-      -webkit-overflow-scrolling: touch;
-      overscroll-behavior-y: contain;
+      overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain;
     }
     .sheet-handle { display: none; }
-    .sheet-layout {
-      grid-template-columns: 1fr;
-    }
-    .image-column {
-      order: -1;
-      margin-bottom: 16px;
-    }
+    .sheet-layout { grid-template-columns: 1fr; }
+    .image-column { order: -1; margin-bottom: 16px; }
   }
   @media (min-width: 640px) {
     .overlay.open { align-items: center; }
     .sheet {
-      width: 100%; max-width: 640px;
-      border-radius: 20px;
-      padding: 22px 22px 24px;
-      max-height: 92vh;
-      overflow-y: auto;
-      animation: popIn 0.25s cubic-bezier(0.2,0.8,0.2,1);
+      width: 100%; max-width: 640px; border-radius: 20px; padding: 22px 22px 24px;
+      max-height: 92vh; overflow-y: auto; animation: popIn 0.25s cubic-bezier(0.2,0.8,0.2,1);
     }
-    .sheet-layout {
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-    }
-    .image-column {
-      display: flex;
-      flex-direction: column;
-    }
+    .sheet-layout { grid-template-columns: 1fr 1fr; gap: 20px; }
+    .image-column { display: flex; flex-direction: column; }
   }
-  .sheet-handle {
-    width: 40px; height: 4px; background: var(--border);
-    border-radius: 2px; margin: 0 auto 14px;
-  }
+  .sheet-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 14px; }
   .sheet h2 {
     font-size: 18px; font-weight: 700; margin-bottom: 16px;
     display: flex; justify-content: space-between; align-items: center;
   }
-  .close-btn {
-    background: none; border: none; color: var(--text-dim);
-    font-size: 24px; cursor: pointer; padding: 4px 8px;
-  }
+  .close-btn { background: none; border: none; color: var(--text-dim); font-size: 24px; cursor: pointer; padding: 4px 8px; }
   
-  /* New layout styles */
-  .sheet-layout {
-    display: grid;
-  }
-  .form-column {
-    display: flex;
-    flex-direction: column;
-  }
-  .image-column {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
+  .sheet-layout { display: grid; }
+  .form-column { display: flex; flex-direction: column; }
+  .image-column { display: flex; flex-direction: column; align-items: center; }
   .image-container {
-    width: 100%;
-    aspect-ratio: 1;
-    background: var(--surface-2);
-    border: 2px dashed var(--border);
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    margin-bottom: 12px;
+    width: 100%; aspect-ratio: 1; background: var(--surface-2);
+    border: 2px dashed var(--border); border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden; margin-bottom: 12px;
   }
-  .image-container img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: none;
-  }
-  .image-container img.loaded {
-    display: block;
-  }
-  .image-placeholder {
-    color: var(--text-faint);
-    font-size: 13px;
-    text-align: center;
-    padding: 20px;
-  }
-  .image-placeholder svg {
-    width: 48px;
-    height: 48px;
-    margin-bottom: 8px;
-    opacity: 0.5;
-  }
-  .image-filename {
-    font-size: 12px;
-    color: var(--text-dim);
-    text-align: center;
-    word-break: break-all;
-    max-width: 100%;
-  }
+  .image-container img { width: 100%; height: 100%; object-fit: cover; display: none; }
+  .image-container img.loaded { display: block; }
+  .image-placeholder { color: var(--text-faint); font-size: 13px; text-align: center; padding: 20px; }
+  .image-placeholder svg { width: 48px; height: 48px; margin-bottom: 8px; opacity: 0.5; }
+  .image-filename { font-size: 12px; color: var(--text-dim); text-align: center; word-break: break-all; max-width: 100%; }
   
   .field { margin-bottom: 14px; }
-  .field label {
-    display: block; font-size: 13px; color: var(--text-dim);
-    margin-bottom: 6px; font-weight: 500;
-  }
+  .field label { display: block; font-size: 13px; color: var(--text-dim); margin-bottom: 6px; font-weight: 500; }
   .field input, .field select {
-    width: 100%; padding: 12px 14px;
-    background: var(--bg); border: 1px solid var(--border);
+    width: 100%; padding: 12px 14px; background: var(--bg); border: 1px solid var(--border);
     border-radius: 10px; color: var(--text); font-size: 16px;
     outline: none; transition: border-color 0.15s;
   }
   .field input:focus, .field select:focus { border-color: var(--accent); }
-  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .actions { display: flex; gap: 10px; margin-top: 18px; }
   .btn {
-    flex: 1; padding: 13px; border-radius: 12px;
-    font-size: 15px; font-weight: 600; cursor: pointer;
-    border: 1px solid var(--border); transition: all 0.15s;
+    flex: 1; padding: 13px; border-radius: 12px; font-size: 15px; font-weight: 600;
+    cursor: pointer; border: 1px solid var(--border); transition: all 0.15s;
   }
   .btn-primary { background: var(--accent); color: white; border-color: var(--accent); }
   .btn-primary:active { opacity: 0.85; }
   .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
   .btn-secondary { background: var(--surface-2); color: var(--text); }
   .btn-danger { background: var(--out-soft); color: var(--out); border-color: rgba(255,77,94,0.3); }
+  
   .toast {
     position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
-    background: var(--surface-2); color: var(--text);
-    padding: 10px 18px; border-radius: 999px;
-    border: 1px solid var(--border); font-size: 14px;
-    z-index: 100; opacity: 0; pointer-events: none;
-    transition: opacity 0.2s, transform 0.2s;
+    background: var(--surface-2); color: var(--text); padding: 10px 18px;
+    border-radius: 999px; border: 1px solid var(--border); font-size: 14px;
+    z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s;
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
-  .last-updated {
-    text-align: center;
-    font-size: 11px;
-    color: var(--text-faint);
-    padding: 8px;
-    margin-top: 4px;
-  }
+  .last-updated { text-align: center; font-size: 11px; color: var(--text-faint); padding: 8px; margin-top: 4px; }
   @media (min-width: 640px) {
     main { max-width: 720px; margin: 0 auto; padding: 16px 24px; }
     header { padding: 16px 24px 12px; }
@@ -421,20 +216,14 @@
 
 <header>
   <div class="header-content">
-    <div class="title-row">
-      <h1>🧰 Equipment</h1>
-    </div>
-
+    <div class="title-row"><h1>🧰 Equipment</h1></div>
     <div class="search">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
       <input type="text" id="search" placeholder="Search equipment..." />
     </div>
-
     <div class="filters-row">
       <div class="filter-select-wrapper">
-        <select class="filter-select" id="categorySelect">
-          <option value="">All categories</option>
-        </select>
+        <select class="filter-select" id="categorySelect"><option value="">All categories</option></select>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
       </div>
       <div class="filter-select-wrapper">
@@ -452,9 +241,7 @@
   </div>
 </header>
 
-<main>
-  <div id="list"></div>
-</main>
+<main><div id="list"></div></main>
 
 <button class="fab" id="addBtn" aria-label="Add item">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
@@ -478,27 +265,22 @@
             <label for="itemName">Name</label>
             <input type="text" id="itemName" required placeholder="e.g. Safety gloves" />
           </div>
-          
           <div class="field">
             <label for="itemQty">Current quantity</label>
             <input type="number" id="itemQty" min="0" value="0" required />
           </div>
-          
           <div class="field">
             <label for="itemMin">Minimum threshold</label>
             <input type="number" id="itemMin" min="0" value="5" required />
           </div>
-          
           <div class="field">
             <label for="itemUnit">Unit</label>
             <input type="text" id="itemUnit" placeholder="pcs, box, roll..." />
           </div>
-          
           <div class="field">
             <label for="itemCategory">Category</label>
             <input type="text" id="itemCategory" placeholder="PPE, Tools..." />
           </div>
-          
           <div class="field">
             <label for="itemLocation">Location</label>
             <input type="text" id="itemLocation" placeholder="Shelf A3, Warehouse..." />
@@ -508,7 +290,7 @@
         <!-- Right Column - Image -->
         <div class="image-column">
           <div class="image-container" id="imageContainer">
-            <img id="itemImage" alt="Equipment image" />
+            <img id="itemImageDisplay" alt="Equipment image" />
             <div class="image-placeholder" id="imagePlaceholder">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
@@ -519,7 +301,8 @@
             </div>
           </div>
           <div class="image-filename" id="imageFilename"></div>
-          <input type="hidden" id="itemImage" />
+          <!-- FIXED: Renamed from itemImage to itemImageFile to avoid ID collision with the <img> tag -->
+          <input type="hidden" id="itemImageFile" />
         </div>
       </div>
       
@@ -572,7 +355,6 @@
   const limitSelect = $('limitSelect');
   const confirmOverlay = $('confirmOverlay');
 
-  // ========== Modal History Management (Mobile Back Button) ==========
   let isModalOpen = false;
   let isConfirmOpen = false;
   let confirmResolver = null;
@@ -592,61 +374,38 @@
   function closeConfirmInternal(result) {
     confirmOverlay.classList.remove('open');
     isConfirmOpen = false;
-    if (confirmResolver) {
-      confirmResolver(result);
-      confirmResolver = null;
-    }
+    if (confirmResolver) { confirmResolver(result); confirmResolver = null; }
   }
 
   function closeConfirm(result) {
     if (isConfirmOpen) {
-      if (history.state && history.state.confirmModal) {
-        history.back();
-      } else {
-        closeConfirmInternal(result !== undefined ? result : false);
-      }
+      if (history.state && history.state.confirmModal) history.back();
+      else closeConfirmInternal(result !== undefined ? result : false);
     }
   }
 
   function closeSheetInternal() {
     overlay.classList.remove('open');
     isModalOpen = false;
-    if (document.activeElement && document.activeElement.blur) {
-      document.activeElement.blur();
-    }
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
   }
 
   function closeSheet() {
     if (isModalOpen) {
-      if (history.state && history.state.modal) {
-        history.back();
-      } else {
-        closeSheetInternal();
-      }
+      if (history.state && history.state.modal) history.back();
+      else closeSheetInternal();
     }
   }
 
-  // Intercept the browser back button
   window.addEventListener('popstate', (e) => {
-    if (isConfirmOpen) {
-      closeConfirmInternal(false);
-      return;
-    }
+    if (isConfirmOpen) { closeConfirmInternal(false); return; }
     if (isModalOpen) {
       const active = document.activeElement;
       const isInput = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT');
-      
-      if (isInput) {
-        // Input is focused - blur it and close the modal immediately
-        active.blur();
-        closeSheetInternal();
-      } else {
-        // No input focused - just close the modal
-        closeSheetInternal();
-      }
+      if (isInput) { active.blur(); closeSheetInternal(); }
+      else { closeSheetInternal(); }
     }
   });
-  // ===================================================================
 
   function loadCache() {
     try {
@@ -658,10 +417,7 @@
 
   function saveCache(itemsToCache, timestamp) {
     try {
-      localStorage.setItem(CACHE_KEY, JSON.stringify({
-        items: itemsToCache,
-        timestamp: timestamp || Date.now()
-      }));
+      localStorage.setItem(CACHE_KEY, JSON.stringify({ items: itemsToCache, timestamp: timestamp || Date.now() }));
     } catch (e) { console.warn('Cache save failed:', e); }
   }
 
@@ -672,17 +428,12 @@
     if (minutes < 60) return `${minutes}m ago`;
     const hours = Math.floor(minutes / 60);
     if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    return `${days}d ago`;
+    return `${Math.floor(hours / 24)}d ago`;
   }
 
   async function parseResponse(response) {
     const text = await response.text();
-    try {
-      return JSON.parse(text);
-    } catch (e) {
-      throw new Error('Invalid response');
-    }
+    try { return JSON.parse(text); } catch (e) { throw new Error('Invalid response'); }
   }
 
   async function fetchFromSheets() {
@@ -691,17 +442,11 @@
     const data = await parseResponse(response);
     if (data.error) throw new Error(data.error);
     if (!Array.isArray(data)) throw new Error('Invalid data');
-    return data.map(item => ({
-      id: 'row_' + item.rowNumber,
-      ...item
-    }));
+    return data.map(item => ({ id: 'row_' + item.rowNumber, ...item }));
   }
 
   async function postToSheets(payload) {
-    const response = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    });
+    const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const result = await parseResponse(response);
     if (!result.success) throw new Error(result.message || 'Failed');
@@ -731,18 +476,12 @@
       if (!silent) toast('Data refreshed');
     } catch (err) {
       console.error('Background fetch failed:', err);
-      if (items.length === 0 && !silent) {
-        toast('Could not load: ' + err.message);
-      }
+      if (items.length === 0 && !silent) toast('Could not load: ' + err.message);
     }
   }
 
   async function addItem(data) {
-    const newItem = {
-      id: 'row_' + nextRowNumber,
-      rowNumber: nextRowNumber,
-      ...data
-    };
+    const newItem = { id: 'row_' + nextRowNumber, rowNumber: nextRowNumber, ...data };
     items.push(newItem);
     nextRowNumber++;
     saveCache(items);
@@ -758,9 +497,8 @@
     saveCache(items);
     render();
     toast('Updated');
-    try {
-      await postToSheets({ action: 'update', row: item.rowNumber, ...data });
-    } catch (err) {
+    try { await postToSheets({ action: 'update', row: item.rowNumber, ...data }); } 
+    catch (err) {
       console.error('Sync failed:', err);
       Object.assign(item, original);
       saveCache(items);
@@ -775,9 +513,8 @@
     saveCache(items);
     render();
     toast('Deleted');
-    try {
-      await postToSheets({ action: 'delete', row: item.rowNumber });
-    } catch (err) {
+    try { await postToSheets({ action: 'delete', row: item.rowNumber }); } 
+    catch (err) {
       console.error('Sync failed:', err);
       items = originalItems;
       saveCache(items);
@@ -791,50 +528,29 @@
     if (item.qty <= item.min) return 'low';
     return 'ok';
   }
-  function statusLabel(s) {
-    return s === 'out' ? 'Out' : s === 'low' ? 'Low' : 'OK';
-  }
+  function statusLabel(s) { return s === 'out' ? 'Out' : s === 'low' ? 'Low' : 'OK'; }
 
   function getCategories() {
     const cats = new Set();
-    items.forEach(it => {
-      if (it.category && it.category.trim() !== '') {
-        cats.add(it.category.trim());
-      }
-    });
+    items.forEach(it => { if (it.category && it.category.trim() !== '') cats.add(it.category.trim()); });
     return Array.from(cats).sort((a, b) => a.localeCompare(b));
   }
 
   function updateCategoryDropdown() {
     const categories = getCategories();
     const currentValue = categorySelect.value;
-    
     categorySelect.innerHTML = '';
-    
     const allOption = document.createElement('option');
-    allOption.value = '';
-    allOption.textContent = 'All categories';
+    allOption.value = ''; allOption.textContent = 'All categories';
     categorySelect.appendChild(allOption);
-    
     categories.forEach(cat => {
       const option = document.createElement('option');
-      option.value = cat;
-      option.textContent = cat;
+      option.value = cat; option.textContent = cat;
       categorySelect.appendChild(option);
     });
-    
-    if (currentValue && categories.includes(currentValue)) {
-      categorySelect.value = currentValue;
-    } else {
-      categorySelect.value = '';
-      currentCategory = '';
-    }
-    
-    if (categories.length === 0) {
-      categorySelect.classList.add('empty');
-    } else {
-      categorySelect.classList.remove('empty');
-    }
+    if (currentValue && categories.includes(currentValue)) categorySelect.value = currentValue;
+    else { categorySelect.value = ''; currentCategory = ''; }
+    categorySelect.classList.toggle('empty', categories.length === 0);
   }
 
   function getFilteredList() {
@@ -844,25 +560,20 @@
       if (!q) return true;
       return (it.name + ' ' + (it.category||'') + ' ' + (it.location||'')).toLowerCase().includes(q);
     });
-
     const order = { out: 0, low: 1, ok: 2 };
     filtered.sort((a,b) => {
       const sa = order[statusOf(a)], sb = order[statusOf(b)];
       if (sa !== sb) return sa - sb;
       return (a.name || '').toString().localeCompare((b.name || '').toString());
     });
-
     return filtered;
   }
 
   function render() {
     items = items.filter(item => item && item.name && item.name.trim() !== '');
-
     updateCategoryDropdown();
-
     const filtered = getFilteredList();
     const totalFiltered = filtered.length;
-
     const isUnlimited = currentLimit === 'all';
     const visibleItems = isUnlimited ? filtered : filtered.slice(0, displayLimit);
     const hasMore = !isUnlimited && totalFiltered > displayLimit;
@@ -870,29 +581,19 @@
 
     let html = '';
     if (totalFiltered === 0) {
-      let emptyTitle = 'No equipment yet';
-      let emptyMsg = 'Tap + to add your first item';
+      let emptyTitle = 'No equipment yet', emptyMsg = 'Tap + to add your first item';
       if (items.length > 0) {
-        if (currentCategory && currentSearch) {
-          emptyTitle = 'Nothing matches';
-          emptyMsg = 'Try a different search or category.';
-        } else if (currentCategory) {
-          emptyTitle = 'No items in this category';
-          emptyMsg = 'Try selecting a different category.';
-        } else {
-          emptyTitle = 'Nothing matches';
-          emptyMsg = 'Try a different search.';
-        }
+        if (currentCategory && currentSearch) { emptyTitle = 'Nothing matches'; emptyMsg = 'Try a different search or category.'; }
+        else if (currentCategory) { emptyTitle = 'No items in this category'; emptyMsg = 'Try selecting a different category.'; }
+        else { emptyTitle = 'Nothing matches'; emptyMsg = 'Try a different search.'; }
       }
-      html = `
-        <div class="empty">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-            <path d="M3.3 7 12 12l8.7-5M12 22V12"/>
-          </svg>
-          <h3>${emptyTitle}</h3>
-          <p>${emptyMsg}</p>
-        </div>`;
+      html = `<div class="empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+          <path d="M3.3 7 12 12l8.7-5M12 22V12"/>
+        </svg>
+        <h3>${emptyTitle}</h3><p>${emptyMsg}</p>
+      </div>`;
     } else {
       html = visibleItems.map(it => {
         const s = statusOf(it);
@@ -901,50 +602,37 @@
         metaParts.push(`<span class="qty ${s}">${it.qty}/${it.min}${unit}</span>`);
         if (it.category) metaParts.push(`<span class="sep">·</span><span>${escapeHtml(it.category)}</span>`);
         if (it.location) metaParts.push(`<span class="sep">·</span><span>${escapeHtml(it.location)}</span>`);
-        return `
-          <div class="item status-${s}" data-id="${it.id}">
-            <div class="item-name">
-              <span class="item-name-text">${escapeHtml(it.name)}</span>
-              <span class="badge ${s}">${statusLabel(s)}</span>
-            </div>
-            <div class="item-meta">${metaParts.join('')}</div>
-          </div>`;
+        return `<div class="item status-${s}" data-id="${it.id}">
+          <div class="item-name">
+            <span class="item-name-text">${escapeHtml(it.name)}</span>
+            <span class="badge ${s}">${statusLabel(s)}</span>
+          </div>
+          <div class="item-meta">${metaParts.join('')}</div>
+        </div>`;
       }).join('');
 
       if (hasMore) {
-        const nextBatch = Math.min(currentLimit, remaining);
-        html += `
-          <button class="load-more" id="loadMoreBtn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="6 9 12 15 18 9"/>
-            </svg>
-            <span>Load more</span>
-            <span class="load-more-count">(${remaining} remaining)</span>
-          </button>`;
+        html += `<button class="load-more" id="loadMoreBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          <span>Load more</span>
+          <span class="load-more-count">(${remaining} remaining)</span>
+        </button>`;
       }
     }
 
-    if (lastUpdateTime) {
-      html += `<div class="last-updated">Last updated: ${formatTimeAgo(lastUpdateTime)}</div>`;
-    }
-
+    if (lastUpdateTime) html += `<div class="last-updated">Last updated: ${formatTimeAgo(lastUpdateTime)}</div>`;
     listEl.innerHTML = html;
 
     const loadMoreBtn = $('loadMoreBtn');
-    if (loadMoreBtn) {
-      loadMoreBtn.addEventListener('click', handleLoadMore);
-    }
+    if (loadMoreBtn) loadMoreBtn.addEventListener('click', handleLoadMore);
   }
 
   function handleLoadMore() {
     displayLimit += currentLimit;
     render();
-
     requestAnimationFrame(() => {
       const newBtn = $('loadMoreBtn');
-      if (newBtn) {
-        newBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
+      if (newBtn) newBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
   }
 
@@ -960,23 +648,15 @@
     openEdit(item);
   });
 
-  categorySelect.addEventListener('change', e => {
-    currentCategory = e.target.value;
-    displayLimit = currentLimit === 'all' ? Infinity : currentLimit;
-    render();
-  });
-
+  categorySelect.addEventListener('change', e => { currentCategory = e.target.value; displayLimit = currentLimit === 'all' ? Infinity : currentLimit; render(); });
   limitSelect.addEventListener('change', e => {
     const val = e.target.value;
     currentLimit = val === 'all' ? 'all' : parseInt(val, 10);
     displayLimit = currentLimit === 'all' ? Infinity : currentLimit;
     render();
   });
-
   $('search').addEventListener('input', e => {
-    if (searchDebounceTimer) {
-      clearTimeout(searchDebounceTimer);
-    }
+    if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
     searchDebounceTimer = setTimeout(() => {
       currentSearch = e.target.value;
       displayLimit = currentLimit === 'all' ? Infinity : currentLimit;
@@ -990,7 +670,7 @@
   overlay.addEventListener('click', e => { if (e.target === overlay) closeSheet(); });
 
   function loadImage(imageName) {
-    const img = $('itemImage');
+    const img = $('itemImageDisplay');
     const placeholder = $('imagePlaceholder');
     const filenameEl = $('imageFilename');
     
@@ -1026,18 +706,16 @@
     $('itemUnit').value = item ? (item.unit || '') : '';
     $('itemCategory').value = item ? (item.category || '') : '';
     $('itemLocation').value = item ? (item.location || '') : '';
-    $('itemImage').value = item ? (item.image || '') : '';
+    
+    // FIXED: Use itemImageFile instead of itemImage
+    $('itemImageFile').value = item ? (item.image || '') : '';
     $('deleteBtn').style.display = item ? 'block' : 'none';
     
-    // Load image if exists
     loadImage(item ? item.image : '');
     
     sheet.scrollTop = 0;
-    
-    // Push state to history so the back button closes this modal instead of the page
     history.pushState({ modal: true }, '');
     isModalOpen = true;
-    
     overlay.classList.add('open');
     setTimeout(() => $('itemName').focus(), 200);
   }
@@ -1052,39 +730,24 @@
       unit: $('itemUnit').value.trim(),
       category: $('itemCategory').value.trim(),
       location: $('itemLocation').value.trim(),
-      image: $('itemImage').value.trim()
+      // FIXED: Read from itemImageFile
+      image: $('itemImageFile').value.trim()
     };
     if (!data.name) return;
     
-    // Close the sheet via history.back() to cleanly pop the state
-    if (isModalOpen && history.state && history.state.modal) {
-      history.back();
-    } else {
-      closeSheetInternal();
-    }
+    if (isModalOpen && history.state && history.state.modal) history.back();
+    else closeSheetInternal();
 
-    if (id && id.startsWith('row_')) {
-      updateItem(items.find(i => i.id === id), data);
-    } else {
-      addItem(data);
-    }
+    if (id && id.startsWith('row_')) updateItem(items.find(i => i.id === id), data);
+    else addItem(data);
   });
 
   $('deleteBtn').addEventListener('click', async () => {
     const id = $('itemId').value;
     if (!id || !id.startsWith('row_')) return;
-    
     const item = items.find(i => i.id === id);
-    const confirmed = await showConfirm(
-      'Delete item?',
-      `"${item ? item.name : 'This item'}" will be permanently removed.`,
-      'Delete'
-    );
-    
-    if (confirmed) {
-      closeSheet();
-      deleteItem(item);
-    }
+    const confirmed = await showConfirm('Delete item?', `"${item ? item.name : 'This item'}" will be permanently removed.`, 'Delete');
+    if (confirmed) { closeSheet(); deleteItem(item); }
   });
 
   let toastTimer;
@@ -1104,11 +767,8 @@
       nextRowNumber = Math.max(...items.map(i => i.rowNumber || 0), 1) + 1;
       render();
     }
-
     setTimeout(() => {
-      loadAll(true, true).catch(err => {
-        console.error('Initial background fetch failed:', err);
-      });
+      loadAll(true, true).catch(err => console.error('Initial background fetch failed:', err));
     }, 300);
   }
 
@@ -1117,19 +777,13 @@
       const cached = loadCache();
       const age = cached && cached.timestamp ? Date.now() - cached.timestamp : Infinity;
       if (age > 5 * 60 * 1000) {
-        loadAll(true, true).catch(err => {
-          console.error('Visibility refresh failed:', err);
-        });
+        loadAll(true, true).catch(err => console.error('Visibility refresh failed:', err));
       }
     }
   });
 
   window.addEventListener('pageshow', (e) => {
-    if (e.persisted) {
-      loadAll(true, true).catch(err => {
-        console.error('Pageshow refresh failed:', err);
-      });
-    }
+    if (e.persisted) loadAll(true, true).catch(err => console.error('Pageshow refresh failed:', err));
   });
 
   init();

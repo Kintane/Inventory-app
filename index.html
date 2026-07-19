@@ -466,7 +466,7 @@
 
 <script>
 (() => {
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyrQnh_rVGMoQFUFPRpPF6VLqr9RBNw4Vwcj6pbhGkBzrgILnhZisfIx4z_7bV22OMQ8A/exec';
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwWzD_Xy1JRxgBMprykXAYNy9uJnxWgvpgNGr1Gj_aqO6SEcyrNpWeOj_2livNGz9UX/exec';
   const CACHE_KEY = 'equipment_cache_v2';
   const CACHE_MAX_AGE = 24 * 60 * 60 * 1000;
   const SEARCH_DEBOUNCE_MS = 300;
@@ -620,21 +620,22 @@
   }
 
   async function uploadImageToDrive(file) {
-    try {
-      const compressedData = await compressImage(file, 1200, 0.8);
-      
-      const result = await postToSheets({
-        action: 'uploadImage',
-        imageData: compressedData,
-        filename: file.name.replace(/\.[^/.]+$/, "") + ".jpg"
-      });
-      
-      return result.url;
-    } catch (err) {
-      throw err;
-    }
+  try {
+    // Reduced from 1200px/0.8 to 800px/0.7 — much faster, still looks great
+    const compressedData = await compressImage(file, 800, 0.7);
+    
+    const result = await postToSheets({
+      action: 'uploadImage',
+      imageData: compressedData,
+      filename: file.name.replace(/\.[^/.]+$/, "") + ".jpg"
+    });
+    
+    return result.url;
+  } catch (err) {
+    throw err;
   }
-
+}
+ 
   async function loadAll(silent = false, force = false) {
     const cached = loadCache();
     if (cached && cached.items) {

@@ -480,6 +480,9 @@
   let lastUpdateTime = null;
   let nextRowNumber = 2;
   let searchDebounceTimer = null;
+  
+  // Track upload state for instant preview
+  let isUploading = false;
 
   const $ = id => document.getElementById(id);
   const listEl = $('list');
@@ -587,7 +590,7 @@
     return result;
   }
 
-  async function compressImage(file, maxWidth = 1200, quality = 0.8) {
+  async function compressImage(file, maxWidth = 800, quality = 0.7) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -619,23 +622,6 @@
     });
   }
 
-  async function uploadImageToDrive(file) {
-  try {
-    // Reduced from 1200px/0.8 to 800px/0.7 — much faster, still looks great
-    const compressedData = await compressImage(file, 800, 0.7);
-    
-    const result = await postToSheets({
-      action: 'uploadImage',
-      imageData: compressedData,
-      filename: file.name.replace(/\.[^/.]+$/, "") + ".jpg"
-    });
-    
-    return result.url;
-  } catch (err) {
-    throw err;
-  }
-}
- 
   async function loadAll(silent = false, force = false) {
     const cached = loadCache();
     if (cached && cached.items) {
@@ -852,8 +838,29 @@
   $('cancelBtn').addEventListener('click', closeSheet);
   overlay.addEventListener('click', e => { if (e.target === overlay) closeSheet(); });
 
+  // ========== INSTANT PREVIEW UPLOAD ==========
+  const spinnerSvg = `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation: spin 1s linear infinite">
+      <line x1="12" y1="2" x2="12" y2="6"/>
+      <line x1="12" y1="18" x2="12" y2="22"/>
+      <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/>
+      <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
+      <line x1="2" y1="12" x2="6" y2="12"/>
+      <line x1="18" y1="12" x2="22" y2="12"/>
+      <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/>
+      <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/>
+    </svg>`;
+  
+  const uploadBtnOriginalHtml = `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="17 8 12 3 7 8"/>
+      <line x1="12" y1="3" x2="12" y2="15"/>
+    </svg>
+    <span>Upload Image</span>`;
+
   $('uploadBtn').addEventListener('click', () => {
-    $('imageFileInput').click();
+    if (!isUploading) $('imageFileInput').click();
   });
 
   $('imageFileInput').addEventListener('change', async (e) => {
@@ -866,45 +873,51 @@
     }
 
     const uploadBtn = $('uploadBtn');
-    const originalText = uploadBtn.innerHTML;
+    const saveBtn = $('saveBtn');
+    const img = $('itemImageDisplay');
+    const placeholder = $('imagePlaceholder');
+    
+    // Lock UI during upload
+    isUploading = true;
+    saveBtn.disabled = true;
+    uploadBtn.classList.add('uploading');
+    uploadBtn.innerHTML = spinnerSvg + '<span>Compressing...</span>';
     
     try {
-      uploadBtn.classList.add('uploading');
-      uploadBtn.innerHTML = `
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation: spin 1s linear infinite">
-          <line x1="12" y1="2" x2="12" y2="6"/>
-          <line x1="12" y1="18" x2="12" y2="22"/>
-          <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/>
-          <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
-          <line x1="2" y1="12" x2="6" y2="12"/>
-          <line x1="18" y1="12" x2="22" y2="12"/>
-          <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/>
-          <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/>
-        </svg>
-        <span>Uploading...</span>
-      `;
+      // Step 1: Compress image locally (fast, ~100-300ms)
+      const compressedData = await compressImage(file, 800, 0.7);
       
-      const imageUrl = await uploadImageToDrive(file);
-      $('itemImageFile').value = imageUrl;
+      // Step 2: Show preview INSTANTLY using the local data URL
+      img.src = compressedData;
+      img.classList.add('loaded');
+      placeholder.style.display = 'none';
       
-      const img = $('itemImageDisplay');
-      const placeholder = $('imagePlaceholder');
-      img.src = imageUrl;
-      img.onload = () => {
-        img.classList.add('loaded');
-        placeholder.style.display = 'none';
-      };
+      // Step 3: Now upload in background (slow part)
+      uploadBtn.innerHTML = spinnerSvg + '<span>Uploading...</span>';
       
-      toast('Image uploaded! Click Save to attach it.');
+      const result = await postToSheets({
+        action: 'uploadImage',
+        imageData: compressedData,
+        filename: file.name.replace(/\.[^/.]+$/, "") + ".jpg"
+      });
+      
+      // Step 4: Upload complete - save the Drive URL
+      $('itemImageFile').value = result.url;
+      
+      toast('Image uploaded!');
     } catch (err) {
       console.error('Upload failed:', err);
       toast('Upload failed: ' + err.message);
+      // Keep the local preview visible so user can see what they selected
     } finally {
       uploadBtn.classList.remove('uploading');
-      uploadBtn.innerHTML = originalText;
+      uploadBtn.innerHTML = uploadBtnOriginalHtml;
       $('imageFileInput').value = '';
+      saveBtn.disabled = false;
+      isUploading = false;
     }
   });
+  // ============================================
 
   function loadImage(imageUrl) {
     const img = $('itemImageDisplay');
@@ -916,36 +929,21 @@
       return;
     }
     
-    // Normalize the URL
     let finalUrl = imageUrl.trim();
-    
-    // Extract file ID from various Google Drive URL formats
     let fileId = null;
     
-    // Format: https://drive.google.com/thumbnail?id=FILE_ID&sz=w1000
     const thumbnailMatch = finalUrl.match(/[?&]id=([^&]+)/);
-    if (thumbnailMatch) {
-      fileId = thumbnailMatch[1];
-    }
+    if (thumbnailMatch) fileId = thumbnailMatch[1];
     
-    // Format: https://drive.google.com/uc?export=view&id=FILE_ID or /d/FILE_ID
     const ucMatch = finalUrl.match(/\/d\/([^\/\?]+)/);
-    if (ucMatch) {
-      fileId = ucMatch[1];
-    }
+    if (ucMatch) fileId = ucMatch[1];
     
-    // Format: https://lh3.googleusercontent.com/d/FILE_ID
     const lhMatch = finalUrl.match(/lh3\.googleusercontent\.com\/d\/([^\/\?=]+)/);
-    if (lhMatch) {
-      fileId = lhMatch[1];
-    }
+    if (lhMatch) fileId = lhMatch[1];
     
-    // If we found a file ID, use the most reliable format
     if (fileId) {
       finalUrl = 'https://lh3.googleusercontent.com/d/' + fileId + '=w1000';
     }
-    
-    console.log('Loading image:', finalUrl);
     
     img.src = finalUrl;
     
@@ -982,8 +980,15 @@
     setTimeout(() => $('itemName').focus(), 200);
   }
 
-  $('itemForm').addEventListener('submit', e => {
+  $('itemForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+    
+    // Prevent saving while upload is in progress
+    if (isUploading) {
+      toast('Please wait for upload to finish...');
+      return;
+    }
+    
     const id = $('itemId').value;
     const data = {
       name: $('itemName').value.trim(),

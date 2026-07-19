@@ -909,52 +909,70 @@
     }
   });
 
-  function loadImage(imageUrl) {
+    function loadImage(imageUrl) {
     const img = $('itemImageDisplay');
     const placeholder = $('imagePlaceholder');
     
+    // Clear previous event listeners to prevent ghost errors
+    img.onload = null;
+    img.onerror = null;
+    img.src = ''; 
+
     if (!imageUrl || imageUrl.trim() === '') {
       img.classList.remove('loaded');
       placeholder.style.display = 'block';
       return;
     }
     
-    let finalUrl = imageUrl.trim();
-    let fileId = null;
-    
-    const thumbnailMatch = finalUrl.match(/[?&]id=([^&]+)/);
-    if (thumbnailMatch) fileId = thumbnailMatch[1];
-    
-    const ucMatch = finalUrl.match(/\/d\/([^\/\?=]+)/);
-    if (ucMatch) fileId = ucMatch[1];
-    
-    const lhMatch = finalUrl.match(/lh3\.googleusercontent\.com\/d\/([^\/\?=]+)/);
-    if (lhMatch) fileId = lhMatch[1];
+    // Extract Google Drive File ID using a robust regex
+    // Matches ?id=FILE_ID, /d/FILE_ID, /file/d/FILE_ID
+    const match = imageUrl.match(/(?:id=|\/d\/|\/file\/d\/)([a-zA-Z0-9_-]+)/i);
+    const fileId = match ? match[1] : null;
+
+    const urlsToTry = [];
     
     if (fileId) {
-      finalUrl = 'https://lh3.googleusercontent.com/d/' + fileId;
+      // Try multiple Google Drive URL formats since Google frequently changes CDN rules
+      urlsToTry.push('https://lh3.googleusercontent.com/d/' + fileId);
+      urlsToTry.push('https://drive.google.com/thumbnail?id=' + fileId + '&sz=w1000');
+      urlsToTry.push('https://lh3.googleusercontent.com/d/' + fileId + '=w1000');
+      urlsToTry.push('https://drive.google.com/uc?export=view&id=' + fileId);
+    } else {
+      // Fallback for non-Drive URLs (like old GitHub pages links)
+      urlsToTry.push(imageUrl.trim());
     }
-    
-    console.log('Loading image - Original:', imageUrl);
-    console.log('Loading image - Final URL:', finalUrl);
-    
+
+    let currentIndex = 0;
     img.classList.remove('loaded');
     placeholder.style.display = 'none';
-    
-    img.onload = () => {
-      console.log('✓ Image loaded successfully:', finalUrl);
-      img.classList.add('loaded');
-      placeholder.style.display = 'none';
-    };
-    
-    img.onerror = (e) => {
-      console.error('✗ Failed to load image:', finalUrl);
-      console.error('Error event:', e);
-      img.classList.remove('loaded');
-      placeholder.style.display = 'block';
-    };
-    
-    img.src = finalUrl;
+
+    function tryNextUrl() {
+      if (currentIndex >= urlsToTry.length) {
+        console.error('✗ All image URLs failed for ID:', fileId);
+        img.classList.remove('loaded');
+        placeholder.style.display = 'block';
+        return;
+      }
+
+      const currentUrl = urlsToTry[currentIndex];
+      console.log('Trying URL:', currentUrl);
+
+      img.onload = () => {
+        console.log('✓ Image loaded successfully:', currentUrl);
+        img.classList.add('loaded');
+        placeholder.style.display = 'none';
+      };
+
+      img.onerror = () => {
+        console.warn('✗ Failed to load image:', currentUrl, '- trying next...');
+        currentIndex++;
+        tryNextUrl();
+      };
+
+      img.src = currentUrl;
+    }
+
+    tryNextUrl();
   }
 
   function openEdit(item) {

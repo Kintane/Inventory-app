@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
+<meta name="referrer" content="no-referrer" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <meta name="theme-color" content="#0b0b0e" />
 <title>Equipment Tracker</title>
@@ -904,36 +905,60 @@
     }
   });
 
-function loadImage(imageUrl) {
-  const img = $('itemImageDisplay');
-  const placeholder = $('imagePlaceholder');
-  
-  if (!imageUrl || imageUrl.trim() === '') {
-    img.classList.remove('loaded');
-    placeholder.style.display = 'block';
-    return;
+  function loadImage(imageUrl) {
+    const img = $('itemImageDisplay');
+    const placeholder = $('imagePlaceholder');
+    
+    if (!imageUrl || imageUrl.trim() === '') {
+      img.classList.remove('loaded');
+      placeholder.style.display = 'block';
+      return;
+    }
+    
+    // Normalize the URL
+    let finalUrl = imageUrl.trim();
+    
+    // Extract file ID from various Google Drive URL formats
+    let fileId = null;
+    
+    // Format: https://drive.google.com/thumbnail?id=FILE_ID&sz=w1000
+    const thumbnailMatch = finalUrl.match(/[?&]id=([^&]+)/);
+    if (thumbnailMatch) {
+      fileId = thumbnailMatch[1];
+    }
+    
+    // Format: https://drive.google.com/uc?export=view&id=FILE_ID or /d/FILE_ID
+    const ucMatch = finalUrl.match(/\/d\/([^\/\?]+)/);
+    if (ucMatch) {
+      fileId = ucMatch[1];
+    }
+    
+    // Format: https://lh3.googleusercontent.com/d/FILE_ID
+    const lhMatch = finalUrl.match(/lh3\.googleusercontent\.com\/d\/([^\/\?=]+)/);
+    if (lhMatch) {
+      fileId = lhMatch[1];
+    }
+    
+    // If we found a file ID, use the most reliable format
+    if (fileId) {
+      finalUrl = 'https://lh3.googleusercontent.com/d/' + fileId + '=w1000';
+    }
+    
+    console.log('Loading image:', finalUrl);
+    
+    img.src = finalUrl;
+    
+    img.onload = () => {
+      img.classList.add('loaded');
+      placeholder.style.display = 'none';
+    };
+    
+    img.onerror = () => {
+      console.error('Failed to load image:', finalUrl);
+      img.classList.remove('loaded');
+      placeholder.style.display = 'block';
+    };
   }
-  
-  // Convert old thumbnail URLs to the more reliable format
-  let finalUrl = imageUrl.trim();
-  const thumbnailMatch = finalUrl.match(/[?&]id=([^&]+)/);
-  if (finalUrl.includes('drive.google.com/thumbnail') && thumbnailMatch) {
-    finalUrl = 'https://lh3.googleusercontent.com/d/' + thumbnailMatch[1];
-  }
-  
-  img.src = finalUrl;
-  
-  img.onload = () => {
-    img.classList.add('loaded');
-    placeholder.style.display = 'none';
-  };
-  
-  img.onerror = () => {
-    console.error('Failed to load image:', finalUrl);
-    img.classList.remove('loaded');
-    placeholder.style.display = 'block';
-  };
-}
 
   function openEdit(item) {
     $('sheetTitle').textContent = item ? 'Edit equipment' : 'Add equipment';

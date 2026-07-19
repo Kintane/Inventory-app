@@ -480,8 +480,6 @@
   let lastUpdateTime = null;
   let nextRowNumber = 2;
   let searchDebounceTimer = null;
-  
-  // Track upload state for instant preview
   let isUploading = false;
 
   const $ = id => document.getElementById(id);
@@ -838,7 +836,6 @@
   $('cancelBtn').addEventListener('click', closeSheet);
   overlay.addEventListener('click', e => { if (e.target === overlay) closeSheet(); });
 
-  // ========== INSTANT PREVIEW UPLOAD ==========
   const spinnerSvg = `
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation: spin 1s linear infinite">
       <line x1="12" y1="2" x2="12" y2="6"/>
@@ -877,22 +874,18 @@
     const img = $('itemImageDisplay');
     const placeholder = $('imagePlaceholder');
     
-    // Lock UI during upload
     isUploading = true;
     saveBtn.disabled = true;
     uploadBtn.classList.add('uploading');
     uploadBtn.innerHTML = spinnerSvg + '<span>Compressing...</span>';
     
     try {
-      // Step 1: Compress image locally (fast, ~100-300ms)
       const compressedData = await compressImage(file, 800, 0.7);
       
-      // Step 2: Show preview INSTANTLY using the local data URL
       img.src = compressedData;
       img.classList.add('loaded');
       placeholder.style.display = 'none';
       
-      // Step 3: Now upload in background (slow part)
       uploadBtn.innerHTML = spinnerSvg + '<span>Uploading...</span>';
       
       const result = await postToSheets({
@@ -901,14 +894,12 @@
         filename: file.name.replace(/\.[^/.]+$/, "") + ".jpg"
       });
       
-      // Step 4: Upload complete - save the Drive URL
       $('itemImageFile').value = result.url;
       
       toast('Image uploaded!');
     } catch (err) {
       console.error('Upload failed:', err);
       toast('Upload failed: ' + err.message);
-      // Keep the local preview visible so user can see what they selected
     } finally {
       uploadBtn.classList.remove('uploading');
       uploadBtn.innerHTML = uploadBtnOriginalHtml;
@@ -917,65 +908,55 @@
       isUploading = false;
     }
   });
-  // ============================================
 
-function loadImage(imageUrl) {
-  const img = $('itemImageDisplay');
-  const placeholder = $('imagePlaceholder');
-  
-  if (!imageUrl || imageUrl.trim() === '') {
+  function loadImage(imageUrl) {
+    const img = $('itemImageDisplay');
+    const placeholder = $('imagePlaceholder');
+    
+    if (!imageUrl || imageUrl.trim() === '') {
+      img.classList.remove('loaded');
+      placeholder.style.display = 'block';
+      return;
+    }
+    
+    let finalUrl = imageUrl.trim();
+    let fileId = null;
+    
+    const thumbnailMatch = finalUrl.match(/[?&]id=([^&]+)/);
+    if (thumbnailMatch) fileId = thumbnailMatch[1];
+    
+    const ucMatch = finalUrl.match(/\/d\/([^\/\?=]+)/);
+    if (ucMatch) fileId = ucMatch[1];
+    
+    const lhMatch = finalUrl.match(/lh3\.googleusercontent\.com\/d\/([^\/\?=]+)/);
+    if (lhMatch) fileId = lhMatch[1];
+    
+    if (fileId) {
+      finalUrl = 'https://lh3.googleusercontent.com/d/' + fileId;
+    }
+    
+    console.log('Loading image - Original:', imageUrl);
+    console.log('Loading image - Final URL:', finalUrl);
+    
     img.classList.remove('loaded');
-    placeholder.style.display = 'block';
-    return;
-  }
-  
-  let finalUrl = imageUrl.trim();
-  
-  // Extract file ID from various Google Drive URL formats
-  let fileId = null;
-  
-  // Format: https://drive.google.com/thumbnail?id=FILE_ID&sz=w1000
-  const thumbnailMatch = finalUrl.match(/[?&]id=([^&]+)/);
-  if (thumbnailMatch) fileId = thumbnailMatch[1];
-  
-  // Format: https://drive.google.com/uc?export=view&id=FILE_ID or /d/FILE_ID
-  const ucMatch = finalUrl.match(/\/d\/([^\/\?=]+)/);
-  if (ucMatch) fileId = ucMatch[1];
-  
-  // Format: https://lh3.googleusercontent.com/d/FILE_ID
-  const lhMatch = finalUrl.match(/lh3\.googleusercontent\.com\/d\/([^\/\?=]+)/);
-  if (lhMatch) fileId = lhMatch[1];
-  
-  // Use the most reliable URL format (without size suffix for better compatibility)
-  if (fileId) {
-    finalUrl = 'https://lh3.googleusercontent.com/d/' + fileId;
-  }
-  
-  console.log('Loading image - Original:', imageUrl);
-  console.log('Loading image - Final URL:', finalUrl);
-  
-  // Clear any existing image state
-  img.classList.remove('loaded');
-  placeholder.style.display = 'none';
-  
-  // Set up event handlers BEFORE setting src
-  img.onload = () => {
-    console.log('✓ Image loaded successfully:', finalUrl);
-    img.classList.add('loaded');
     placeholder.style.display = 'none';
-  };
-  
-  img.onerror = (e) => {
-    console.error('✗ Failed to load image:', finalUrl);
-    console.error('Error event:', e);
-    img.classList.remove('loaded');
-    placeholder.style.display = 'block';
-  };
-  
-  // Set the src to trigger loading
-  img.src = finalUrl;
-}
- 
+    
+    img.onload = () => {
+      console.log('✓ Image loaded successfully:', finalUrl);
+      img.classList.add('loaded');
+      placeholder.style.display = 'none';
+    };
+    
+    img.onerror = (e) => {
+      console.error('✗ Failed to load image:', finalUrl);
+      console.error('Error event:', e);
+      img.classList.remove('loaded');
+      placeholder.style.display = 'block';
+    };
+    
+    img.src = finalUrl;
+  }
+
   function openEdit(item) {
     $('sheetTitle').textContent = item ? 'Edit equipment' : 'Add equipment';
     $('itemId').value = item ? item.id : '';
@@ -1000,7 +981,6 @@ function loadImage(imageUrl) {
   $('itemForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    // Prevent saving while upload is in progress
     if (isUploading) {
       toast('Please wait for upload to finish...');
       return;

@@ -378,7 +378,6 @@
     <form id="itemForm">
       <input type="hidden" id="itemId" />
       
-      <!-- Row 1: Name (full width) -->
       <div class="name-field">
         <div class="field">
           <label for="itemName">Name</label>
@@ -386,7 +385,6 @@
         </div>
       </div>
       
-      <!-- Row 2: Image (2/3 left) + Qty/Min/Unit (1/3 right, centered) -->
       <div class="image-qty-row">
         <div class="image-column">
           <div class="image-container" id="imageContainer">
@@ -428,7 +426,6 @@
         </div>
       </div>
       
-      <!-- Row 3: Category + Location -->
       <div class="details-row">
         <div class="field">
           <label for="itemCategory">Category</label>
@@ -440,7 +437,6 @@
         </div>
       </div>
       
-      <!-- Row 4: Action buttons -->
       <div class="actions">
         <button type="button" class="btn btn-danger" id="deleteBtn" style="display:none">Delete</button>
         <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
@@ -909,70 +905,64 @@
     }
   });
 
-    function loadImage(imageUrl) {
+  function loadImage(imageUrl) {
     const img = $('itemImageDisplay');
     const placeholder = $('imagePlaceholder');
     
-    // Clear previous event listeners to prevent ghost errors
-    img.onload = null;
-    img.onerror = null;
-    img.src = ''; 
-
     if (!imageUrl || imageUrl.trim() === '') {
       img.classList.remove('loaded');
+      img.removeAttribute('src');
       placeholder.style.display = 'block';
       return;
     }
     
-    // Extract Google Drive File ID using a robust regex
-    // Matches ?id=FILE_ID, /d/FILE_ID, /file/d/FILE_ID
-    const match = imageUrl.match(/(?:id=|\/d\/|\/file\/d\/)([a-zA-Z0-9_-]+)/i);
-    const fileId = match ? match[1] : null;
-
-    const urlsToTry = [];
+    let finalUrl = imageUrl.trim();
+    let fileId = null;
     
-    if (fileId) {
-      // Try multiple Google Drive URL formats since Google frequently changes CDN rules
-      urlsToTry.push('https://lh3.googleusercontent.com/d/' + fileId);
-      urlsToTry.push('https://drive.google.com/thumbnail?id=' + fileId + '&sz=w1000');
-      urlsToTry.push('https://lh3.googleusercontent.com/d/' + fileId + '=w1000');
-      urlsToTry.push('https://drive.google.com/uc?export=view&id=' + fileId);
-    } else {
-      // Fallback for non-Drive URLs (like old GitHub pages links)
-      urlsToTry.push(imageUrl.trim());
+    // Extract file ID from various Google Drive URL formats
+    const idParamMatch = finalUrl.match(/[?&]id=([^&]+)/);
+    if (idParamMatch) {
+      fileId = idParamMatch[1];
+    }
+    
+    if (!fileId) {
+      const dMatch = finalUrl.match(/\/d\/([^\/\?=]+)/);
+      if (dMatch) {
+        fileId = dMatch[1];
+      }
     }
 
-    let currentIndex = 0;
+    if (fileId) {
+      // ALWAYS append a size parameter (like =w1000) because Google's CDN 
+      // often returns 403 Forbidden for unsized /d/FILE_ID URLs.
+      finalUrl = `https://lh3.googleusercontent.com/d/${fileId}=w1000`;
+    }
+    
+    console.log('Loading image - Final URL:', finalUrl);
+    
     img.classList.remove('loaded');
     placeholder.style.display = 'none';
-
-    function tryNextUrl() {
-      if (currentIndex >= urlsToTry.length) {
-        console.error('✗ All image URLs failed for ID:', fileId);
-        img.classList.remove('loaded');
-        placeholder.style.display = 'block';
-        return;
-      }
-
-      const currentUrl = urlsToTry[currentIndex];
-      console.log('Trying URL:', currentUrl);
-
-      img.onload = () => {
-        console.log('✓ Image loaded successfully:', currentUrl);
-        img.classList.add('loaded');
-        placeholder.style.display = 'none';
-      };
-
-      img.onerror = () => {
-        console.warn('✗ Failed to load image:', currentUrl, '- trying next...');
-        currentIndex++;
-        tryNextUrl();
-      };
-
-      img.src = currentUrl;
-    }
-
-    tryNextUrl();
+    
+    // Clear the src attribute completely before setting a new one
+    // This prevents the browser from trying to load an invalid cached state
+    img.removeAttribute('src');
+    
+    img.onload = () => {
+      console.log('✓ Image loaded successfully:', finalUrl);
+      img.classList.add('loaded');
+      placeholder.style.display = 'none';
+    };
+    
+    img.onerror = (e) => {
+      console.error('✗ Failed to load image:', finalUrl);
+      img.classList.remove('loaded');
+      placeholder.style.display = 'block';
+    };
+    
+    // Set the src in the next tick to ensure the attribute removal registers
+    setTimeout(() => {
+      img.src = finalUrl;
+    }, 0);
   }
 
   function openEdit(item) {

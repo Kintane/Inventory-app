@@ -211,6 +211,36 @@
   .image-placeholder { color: var(--text-faint); font-size: 13px; text-align: center; padding: 20px; }
   .image-placeholder svg { width: 48px; height: 48px; margin-bottom: 8px; opacity: 0.5; }
   
+  .upload-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-dim);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-top: 8px;
+  }
+  .upload-btn:hover {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .upload-btn.uploading {
+    opacity: 0.6;
+    cursor: wait;
+  }
+  .upload-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+  
   .qty-fields-column {
     display: flex;
     flex-direction: column;
@@ -285,6 +315,12 @@
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
   .last-updated { text-align: center; font-size: 11px; color: var(--text-faint); padding: 8px; margin-top: 4px; }
+  
+  /* Hidden file input */
+  #imageFileInput {
+    display: none;
+  }
+  
   @media (min-width: 640px) {
     main { max-width: 720px; margin: 0 auto; padding: 16px 24px; }
     header { padding: 16px 24px 12px; }
@@ -359,6 +395,15 @@
               <div>No image</div>
             </div>
           </div>
+          <button type="button" class="upload-btn" id="uploadBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <span>Upload Image</span>
+          </button>
+          <input type="file" id="imageFileInput" accept="image/*" />
           <input type="hidden" id="itemImageFile" />
         </div>
         
@@ -416,12 +461,11 @@
 
 <script>
 (() => {
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyqZbjadwHaUfqiAc7e-GL-NvrclpwcMERM-EtSNLQvL-yGZbmRjLaG_Rh7KL3aEfrgMg/exec';
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxxyf8TrJX6yNBqGKFqGATlkXhgXHuDi8aI0uFCCCidY2jRVs-LhNcD33hJvIoNlHO-cg/exec';
   const CACHE_KEY = 'equipment_cache_v2';
   const CACHE_MAX_AGE = 24 * 60 * 60 * 1000;
   const SEARCH_DEBOUNCE_MS = 300;
   const DEFAULT_LIMIT = 20;
-  const IMAGE_BASE_URL = 'https://kintane.github.io/Inventory-app/';
 
   let items = [];
   let currentCategory = '';
@@ -536,6 +580,27 @@
     const result = await parseResponse(response);
     if (!result.success) throw new Error(result.message || 'Failed');
     return result;
+  }
+
+  async function uploadImageToDrive(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const base64Data = e.target.result;
+          const result = await postToSheets({
+            action: 'uploadImage',
+            imageData: base64Data,
+            filename: file.name
+          });
+          resolve(result.url);
+        } catch (err) {
+          reject(err);
+        }
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsDataURL(file);
+    });
   }
 
   async function loadAll(silent = false, force = false) {
@@ -754,6 +819,63 @@
   $('cancelBtn').addEventListener('click', closeSheet);
   overlay.addEventListener('click', e => { if (e.target === overlay) closeSheet(); });
 
+  // Image upload functionality
+  $('uploadBtn').addEventListener('click', () => {
+    $('imageFileInput').click();
+  });
+
+  $('imageFileInput').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast('Please select an image file');
+      return;
+    }
+
+    const uploadBtn = $('uploadBtn');
+    const originalText = uploadBtn.innerHTML;
+    
+    try {
+      uploadBtn.classList.add('uploading');
+      uploadBtn.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation: spin 1s linear infinite">
+          <line x1="12" y1="2" x2="12" y2="6"/>
+          <line x1="12" y1="18" x2="12" y2="22"/>
+          <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/>
+          <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
+          <line x1="2" y1="12" x2="6" y2="12"/>
+          <line x1="18" y1="12" x2="22" y2="12"/>
+          <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/>
+          <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/>
+        </svg>
+        <span>Uploading...</span>
+      `;
+      
+      const imageUrl = await uploadImageToDrive(file);
+      $('itemImageFile').value = imageUrl;
+      
+      // Display the uploaded image
+      const img = $('itemImageDisplay');
+      const placeholder = $('imagePlaceholder');
+      img.src = imageUrl;
+      img.onload = () => {
+        img.classList.add('loaded');
+        placeholder.style.display = 'none';
+      };
+      
+      toast('Image uploaded!');
+    } catch (err) {
+      console.error('Upload failed:', err);
+      toast('Upload failed: ' + err.message);
+    } finally {
+      uploadBtn.classList.remove('uploading');
+      uploadBtn.innerHTML = originalText;
+      $('imageFileInput').value = ''; // Reset file input
+    }
+  });
+
   function loadImage(imageName) {
     const img = $('itemImageDisplay');
     const placeholder = $('imagePlaceholder');
@@ -764,8 +886,7 @@
       return;
     }
     
-    const imageUrl = IMAGE_BASE_URL + imageName.trim();
-    img.src = imageUrl;
+    img.src = imageName;
     
     img.onload = () => {
       img.classList.add('loaded');

@@ -919,7 +919,7 @@
   });
   // ============================================
 
-  function loadImage(imageUrl) {
+function loadImage(imageUrl) {
   const img = $('itemImageDisplay');
   const placeholder = $('imagePlaceholder');
   
@@ -931,46 +931,51 @@
   
   let finalUrl = imageUrl.trim();
   
-  // If URL is already in the correct format, use it directly
-  if (finalUrl.includes('lh3.googleusercontent.com/d/') && /=w\d+/.test(finalUrl)) {
-    // Already correct, use as-is
-  } else {
-    // Extract file ID from various Google Drive URL formats
-    let fileId = null;
-    
-    // Format: https://drive.google.com/thumbnail?id=FILE_ID&sz=w1000
-    const thumbnailMatch = finalUrl.match(/[?&]id=([^&]+)/);
-    if (thumbnailMatch) fileId = thumbnailMatch[1];
-    
-    // Format: https://drive.google.com/uc?export=view&id=FILE_ID or /d/FILE_ID
-    // FIXED: Added = to the exclusion list so we don't capture =w1000 suffix
-    const ucMatch = finalUrl.match(/\/d\/([^\/\?=]+)/);
-    if (ucMatch) fileId = ucMatch[1];
-    
-    // Format: https://lh3.googleusercontent.com/d/FILE_ID
-    const lhMatch = finalUrl.match(/lh3\.googleusercontent\.com\/d\/([^\/\?=]+)/);
-    if (lhMatch) fileId = lhMatch[1];
-    
-    if (fileId) {
-      finalUrl = 'https://lh3.googleusercontent.com/d/' + fileId + '=w1000';
-    }
+  // Extract file ID from various Google Drive URL formats
+  let fileId = null;
+  
+  // Format: https://drive.google.com/thumbnail?id=FILE_ID&sz=w1000
+  const thumbnailMatch = finalUrl.match(/[?&]id=([^&]+)/);
+  if (thumbnailMatch) fileId = thumbnailMatch[1];
+  
+  // Format: https://drive.google.com/uc?export=view&id=FILE_ID or /d/FILE_ID
+  const ucMatch = finalUrl.match(/\/d\/([^\/\?=]+)/);
+  if (ucMatch) fileId = ucMatch[1];
+  
+  // Format: https://lh3.googleusercontent.com/d/FILE_ID
+  const lhMatch = finalUrl.match(/lh3\.googleusercontent\.com\/d\/([^\/\?=]+)/);
+  if (lhMatch) fileId = lhMatch[1];
+  
+  // Use the most reliable URL format (without size suffix for better compatibility)
+  if (fileId) {
+    finalUrl = 'https://lh3.googleusercontent.com/d/' + fileId;
   }
   
-  console.log('Loading image:', finalUrl);
+  console.log('Loading image - Original:', imageUrl);
+  console.log('Loading image - Final URL:', finalUrl);
   
-  img.src = finalUrl;
+  // Clear any existing image state
+  img.classList.remove('loaded');
+  placeholder.style.display = 'none';
   
+  // Set up event handlers BEFORE setting src
   img.onload = () => {
+    console.log('✓ Image loaded successfully:', finalUrl);
     img.classList.add('loaded');
     placeholder.style.display = 'none';
   };
   
-  img.onerror = () => {
-    console.error('Failed to load image:', finalUrl);
+  img.onerror = (e) => {
+    console.error('✗ Failed to load image:', finalUrl);
+    console.error('Error event:', e);
     img.classList.remove('loaded');
     placeholder.style.display = 'block';
   };
+  
+  // Set the src to trigger loading
+  img.src = finalUrl;
 }
+ 
   function openEdit(item) {
     $('sheetTitle').textContent = item ? 'Edit equipment' : 'Add equipment';
     $('itemId').value = item ? item.id : '';

@@ -465,7 +465,7 @@
 
 <script>
 (() => {
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyM22JEv0519vfITBdr1Pe_6S97QSLtMG6fk2ycIe7YqGmPY4nPh_OGyV-vYCukKnqJLw/exec';
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwas9bXmto_IwSG1OxkN1y1yGTlMeQySa9aG-GZH3nCWkjKs1fi-dJqmT1iz4G02zEWMA/exec';
   const CACHE_KEY = 'equipment_cache_v2';
   const CACHE_MAX_AGE = 24 * 60 * 60 * 1000;
   const SEARCH_DEBOUNCE_MS = 300;
@@ -904,28 +904,36 @@
     }
   });
 
-  function loadImage(imageName) {
-    const img = $('itemImageDisplay');
-    const placeholder = $('imagePlaceholder');
-    
-    if (!imageName || imageName.trim() === '') {
-      img.classList.remove('loaded');
-      placeholder.style.display = 'block';
-      return;
-    }
-    
-    img.src = imageName;
-    
-    img.onload = () => {
-      img.classList.add('loaded');
-      placeholder.style.display = 'none';
-    };
-    
-    img.onerror = () => {
-      img.classList.remove('loaded');
-      placeholder.style.display = 'block';
-    };
+function loadImage(imageUrl) {
+  const img = $('itemImageDisplay');
+  const placeholder = $('imagePlaceholder');
+  
+  if (!imageUrl || imageUrl.trim() === '') {
+    img.classList.remove('loaded');
+    placeholder.style.display = 'block';
+    return;
   }
+  
+  // Convert old thumbnail URLs to the more reliable format
+  let finalUrl = imageUrl.trim();
+  const thumbnailMatch = finalUrl.match(/[?&]id=([^&]+)/);
+  if (finalUrl.includes('drive.google.com/thumbnail') && thumbnailMatch) {
+    finalUrl = 'https://lh3.googleusercontent.com/d/' + thumbnailMatch[1];
+  }
+  
+  img.src = finalUrl;
+  
+  img.onload = () => {
+    img.classList.add('loaded');
+    placeholder.style.display = 'none';
+  };
+  
+  img.onerror = () => {
+    console.error('Failed to load image:', finalUrl);
+    img.classList.remove('loaded');
+    placeholder.style.display = 'block';
+  };
+}
 
   function openEdit(item) {
     $('sheetTitle').textContent = item ? 'Edit equipment' : 'Add equipment';

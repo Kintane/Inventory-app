@@ -548,6 +548,8 @@
 
   function closeConfirm(result) {
     if (!isConfirmOpen) return;
+    // FIX: Use replaceState instead of history.back() to prevent popstate 
+    // from unconditionally forcing the result to false
     if (history.state && history.state.confirmModal) {
       history.replaceState(null, '');
     }
@@ -918,6 +920,7 @@
     $('imageFileInput').click();
   });
 
+  // FIX: Added missing event listeners for the confirm dialog buttons
   $('confirmCancel').addEventListener('click', () => closeConfirm(false));
   $('confirmOk').addEventListener('click', () => closeConfirm(true));
   confirmOverlay.addEventListener('click', e => {
@@ -926,16 +929,7 @@
 
   $('deleteImageBtn').addEventListener('click', async () => {
     const imageUrl = $('itemImageFile').value;
-    
-    if (!imageUrl || imageUrl.trim() === '') {
-      const img = $('itemImageDisplay');
-      const placeholder = $('imagePlaceholder');
-      img.src = '';
-      img.classList.remove('loaded');
-      placeholder.style.display = 'block';
-      $('deleteImageBtn').disabled = true;
-      return;
-    }
+    if (!imageUrl || imageUrl.trim() === '') return;
     
     const confirmed = await showConfirm('Delete image?', 'This will delete the image from Google Drive and remove it from this item.', 'Delete Image');
     if (!confirmed) return;
@@ -990,34 +984,6 @@
       return;
     }
 
-    const img = $('itemImageDisplay');
-    const placeholder = $('imagePlaceholder');
-    
-    // Reset state
-    img.classList.remove('loaded');
-    placeholder.style.display = 'block';
-    
-    const localUrl = URL.createObjectURL(file);
-    
-    // CRITICAL: Assign handlers BEFORE setting src to prevent race conditions
-    img.onload = () => {
-      img.classList.add('loaded');
-      placeholder.style.display = 'none';
-      URL.revokeObjectURL(localUrl); // Free up memory once loaded
-    };
-    
-    img.onerror = () => {
-      console.error('Failed to load local preview');
-      URL.revokeObjectURL(localUrl);
-      placeholder.style.display = 'block';
-    };
-    
-    // Now set the src
-    img.src = localUrl;
-
-    // Disable delete button while uploading to prevent race conditions
-    $('deleteImageBtn').disabled = true;
-
     const uploadBtn = $('uploadBtn');
     const originalText = uploadBtn.innerHTML;
     
@@ -1040,19 +1006,31 @@
       const imageUrl = await uploadImageToDrive(file);
       $('itemImageFile').value = imageUrl;
       
+      const img = $('itemImageDisplay');
+      const placeholder = $('imagePlaceholder');
+      
+      img.onload = null;
+      img.onerror = null;
+      img.classList.remove('loaded');
+      img.src = '';
+      placeholder.style.display = 'block';
+      
+      img.src = imageUrl;
+      img.onload = () => {
+        img.classList.add('loaded');
+        placeholder.style.display = 'none';
+      };
+      
+      $('deleteImageBtn').disabled = false;
+      
       toast('Image uploaded! Click Save to attach it.');
     } catch (err) {
       console.error('Upload failed:', err);
       toast('Upload failed: ' + err.message);
-      $('itemImageFile').value = '';
     } finally {
       uploadBtn.classList.remove('uploading');
       uploadBtn.innerHTML = originalText;
       $('imageFileInput').value = '';
-      
-      if ($('itemImageFile').value.trim() !== '') {
-        $('deleteImageBtn').disabled = false;
-      }
     }
   });
 
@@ -1061,7 +1039,6 @@
     const placeholder = $('imagePlaceholder');
     const deleteBtn = $('deleteImageBtn');
     
-    // Reset state
     img.onload = null;
     img.onerror = null;
     img.classList.remove('loaded');
@@ -1079,13 +1056,19 @@
     let fileId = null;
     
     const thumbnailMatch = finalUrl.match(/[?&]id=([^&]+)/);
-    if (thumbnailMatch) fileId = thumbnailMatch[1];
+    if (thumbnailMatch) {
+      fileId = thumbnailMatch[1];
+    }
     
     const ucMatch = finalUrl.match(/\/d\/([^\/\?]+)/);
-    if (ucMatch) fileId = ucMatch[1];
+    if (ucMatch) {
+      fileId = ucMatch[1];
+    }
     
     const lhMatch = finalUrl.match(/lh3\.googleusercontent\.com\/d\/([^\/\?=]+)/);
-    if (lhMatch) fileId = lhMatch[1];
+    if (lhMatch) {
+      fileId = lhMatch[1];
+    }
     
     if (fileId) {
       finalUrl = 'https://lh3.googleusercontent.com/d/' + fileId + '=w1000';
@@ -1093,7 +1076,8 @@
     
     console.log('Loading image:', finalUrl);
     
-    // CRITICAL: Assign handlers BEFORE setting src to prevent race conditions
+    img.src = finalUrl;
+    
     img.onload = () => {
       img.classList.add('loaded');
       placeholder.style.display = 'none';
@@ -1104,8 +1088,6 @@
       img.classList.remove('loaded');
       placeholder.style.display = 'block';
     };
-    
-    img.src = finalUrl;
   }
 
   function openEdit(item) {
@@ -1199,3 +1181,6 @@
 </script>
 </body>
 </html>
+
+
+When I upload an image I want it to be displayed in the window immediately while the upload and processing is happening in the background

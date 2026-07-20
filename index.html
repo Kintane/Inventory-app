@@ -621,7 +621,7 @@
 
   async function uploadImageToDrive(file) {
     try {
-      const compressedData = await compressImage(file, 100, 0.8);
+      const compressedData = await compressImage(file, 481, 0.8);
       
       const result = await postToSheets({
         action: 'uploadImage',

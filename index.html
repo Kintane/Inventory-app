@@ -548,8 +548,6 @@
 
   function closeConfirm(result) {
     if (!isConfirmOpen) return;
-    // FIX: Use replaceState instead of history.back() to prevent popstate 
-    // from unconditionally forcing the result to false
     if (history.state && history.state.confirmModal) {
       history.replaceState(null, '');
     }
@@ -920,7 +918,6 @@
     $('imageFileInput').click();
   });
 
-  // FIX: Added missing event listeners for the confirm dialog buttons
   $('confirmCancel').addEventListener('click', () => closeConfirm(false));
   $('confirmOk').addEventListener('click', () => closeConfirm(true));
   confirmOverlay.addEventListener('click', e => {
@@ -929,7 +926,18 @@
 
   $('deleteImageBtn').addEventListener('click', async () => {
     const imageUrl = $('itemImageFile').value;
-    if (!imageUrl || imageUrl.trim() === '') return;
+    
+    // If there's no server URL (e.g., upload still in progress, failed, or new item),
+    // just clear the local preview and reset the state.
+    if (!imageUrl || imageUrl.trim() === '') {
+      const img = $('itemImageDisplay');
+      const placeholder = $('imagePlaceholder');
+      img.src = '';
+      img.classList.remove('loaded');
+      placeholder.style.display = 'block';
+      $('deleteImageBtn').disabled = true;
+      return;
+    }
     
     const confirmed = await showConfirm('Delete image?', 'This will delete the image from Google Drive and remove it from this item.', 'Delete Image');
     if (!confirmed) return;
@@ -984,6 +992,29 @@
       return;
     }
 
+    // 1. Immediately display local preview
+    const localUrl = URL.createObjectURL(file);
+    const img = $('itemImageDisplay');
+    const placeholder = $('imagePlaceholder');
+    
+    img.onload = null;
+    img.onerror = null;
+    img.classList.remove('loaded');
+    
+    img.src = localUrl;
+    img.onload = () => {
+      img.classList.add('loaded');
+      placeholder.style.display = 'none';
+      URL.revokeObjectURL(localUrl); // Free up memory once loaded
+    };
+    img.onerror = () => {
+      console.error('Failed to load local preview');
+      URL.revokeObjectURL(localUrl);
+    };
+
+    // Disable delete button while uploading to prevent race conditions
+    $('deleteImageBtn').disabled = true;
+
     const uploadBtn = $('uploadBtn');
     const originalText = uploadBtn.innerHTML;
     
@@ -1003,34 +1034,27 @@
         <span>Uploading...</span>
       `;
       
+      // 2. Upload in the background
       const imageUrl = await uploadImageToDrive(file);
+      
+      // 3. Update the hidden input with the real server URL once finished
       $('itemImageFile').value = imageUrl;
-      
-      const img = $('itemImageDisplay');
-      const placeholder = $('imagePlaceholder');
-      
-      img.onload = null;
-      img.onerror = null;
-      img.classList.remove('loaded');
-      img.src = '';
-      placeholder.style.display = 'block';
-      
-      img.src = imageUrl;
-      img.onload = () => {
-        img.classList.add('loaded');
-        placeholder.style.display = 'none';
-      };
-      
-      $('deleteImageBtn').disabled = false;
       
       toast('Image uploaded! Click Save to attach it.');
     } catch (err) {
       console.error('Upload failed:', err);
       toast('Upload failed: ' + err.message);
+      // Clear the hidden input on failure so it doesn't save an invalid state
+      $('itemImageFile').value = '';
     } finally {
       uploadBtn.classList.remove('uploading');
       uploadBtn.innerHTML = originalText;
-      $('imageFileInput').value = '';
+      $('imageFileInput').value = ''; // Reset input so the same file can be selected again
+      
+      // Re-enable delete button if an image is successfully attached
+      if ($('itemImageFile').value.trim() !== '') {
+        $('deleteImageBtn').disabled = false;
+      }
     }
   });
 

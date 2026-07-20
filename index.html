@@ -932,7 +932,6 @@
   $('deleteImageBtn').addEventListener('click', async () => {
     const imageUrl = $('itemImageFile').value;
     
-    // Invalidate any pending background upload
     activeImageUploadId++;
     pendingImageUpload = null;
 
@@ -983,7 +982,6 @@
       img.classList.remove('loaded');
       placeholder.style.display = 'block';
       
-      // IMMEDIATELY UPDATE ITEM AND SYNC
       const currentId = $('itemId').value;
       if (currentId && currentId.startsWith('row_')) {
         const item = items.find(i => i.id === currentId);
@@ -991,8 +989,7 @@
           item.image = '';
           saveCache(items);
           render();
-          postToSheets({ action: 'update', row: item.rowNumber, image: '' })
-            .catch(err => console.error('Sync failed:', err));
+          await postToSheets({ action: 'update', row: item.rowNumber, image: '' });
         }
       }
       
@@ -1018,7 +1015,6 @@
     activeImageUploadId++;
     const myUploadId = activeImageUploadId;
 
-    // 1. Immediate local preview
     if (currentLocalImageUrl) {
       URL.revokeObjectURL(currentLocalImageUrl);
     }
@@ -1032,7 +1028,6 @@
     placeholder.style.display = 'none';
     $('deleteImageBtn').disabled = false;
 
-    // 2. Background upload processing
     const uploadBtn = $('uploadBtn');
     const originalText = uploadBtn.innerHTML;
     uploadBtn.classList.add('uploading');
@@ -1057,27 +1052,18 @@
         if (myUploadId === activeImageUploadId) {
           $('itemImageFile').value = imageUrl;
           
-          // 3. Keep the temporary local image visible to prevent a blank frame.
-          // The permanent URL will be loaded seamlessly the next time the item view is opened.
-          
-          // 4. IMMEDIATELY ASSOCIATE WITH ITEM AND SYNC
           const currentId = $('itemId').value;
           if (currentId && currentId.startsWith('row_')) {
-            // Existing item: update and sync immediately
             const item = items.find(i => i.id === currentId);
             if (item) {
               item.image = imageUrl;
               saveCache(items);
-              render(); // Instantly updates the main list
-              postToSheets({ action: 'update', row: item.rowNumber, image: imageUrl })
-                .then(() => toast('Image saved'))
-                .catch(err => {
-                  console.error('Sync failed:', err);
-                  toast('Image saved locally, sync pending');
-                });
+              render();
+              // AWAIT the sheet update to ensure the row exists before proceeding
+              await postToSheets({ action: 'update', row: item.rowNumber, image: imageUrl });
+              toast('Image saved');
             }
           } else {
-            // New item: auto-save it if it has a name so the image isn't orphaned
             const name = $('itemName').value.trim();
             if (name) {
               const data = {
@@ -1095,16 +1081,12 @@
               saveCache(items);
               render();
               
-              // Update form to reflect it's now a saved item
               $('itemId').value = newItem.id;
               $('deleteBtn').style.display = 'block';
               
-              postToSheets({ action: 'add', ...data })
-                .then(() => toast('New item & image saved'))
-                .catch(err => {
-                  console.error('Sync failed:', err);
-                  toast('Saved locally, sync pending');
-                });
+              // AWAIT the sheet creation to ensure the row exists before proceeding
+              await postToSheets({ action: 'add', ...data });
+              toast('New item & image saved');
             } else {
               toast('Image uploaded (enter name & save item to keep)');
             }
@@ -1132,7 +1114,6 @@
     const placeholder = $('imagePlaceholder');
     const deleteBtn = $('deleteImageBtn');
     
-    // Clean up any local URL from previous session
     if (currentLocalImageUrl) {
       URL.revokeObjectURL(currentLocalImageUrl);
       currentLocalImageUrl = null;

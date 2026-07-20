@@ -927,8 +927,6 @@
   $('deleteImageBtn').addEventListener('click', async () => {
     const imageUrl = $('itemImageFile').value;
     
-    // If there's no server URL (e.g., upload still in progress, failed, or new item),
-    // just clear the local preview and reset the state.
     if (!imageUrl || imageUrl.trim() === '') {
       const img = $('itemImageDisplay');
       const placeholder = $('imagePlaceholder');
@@ -992,25 +990,30 @@
       return;
     }
 
-    // 1. Immediately display local preview
-    const localUrl = URL.createObjectURL(file);
     const img = $('itemImageDisplay');
     const placeholder = $('imagePlaceholder');
     
-    img.onload = null;
-    img.onerror = null;
+    // Reset state
     img.classList.remove('loaded');
+    placeholder.style.display = 'block';
     
-    img.src = localUrl;
+    const localUrl = URL.createObjectURL(file);
+    
+    // CRITICAL: Assign handlers BEFORE setting src to prevent race conditions
     img.onload = () => {
       img.classList.add('loaded');
       placeholder.style.display = 'none';
       URL.revokeObjectURL(localUrl); // Free up memory once loaded
     };
+    
     img.onerror = () => {
       console.error('Failed to load local preview');
       URL.revokeObjectURL(localUrl);
+      placeholder.style.display = 'block';
     };
+    
+    // Now set the src
+    img.src = localUrl;
 
     // Disable delete button while uploading to prevent race conditions
     $('deleteImageBtn').disabled = true;
@@ -1034,24 +1037,19 @@
         <span>Uploading...</span>
       `;
       
-      // 2. Upload in the background
       const imageUrl = await uploadImageToDrive(file);
-      
-      // 3. Update the hidden input with the real server URL once finished
       $('itemImageFile').value = imageUrl;
       
       toast('Image uploaded! Click Save to attach it.');
     } catch (err) {
       console.error('Upload failed:', err);
       toast('Upload failed: ' + err.message);
-      // Clear the hidden input on failure so it doesn't save an invalid state
       $('itemImageFile').value = '';
     } finally {
       uploadBtn.classList.remove('uploading');
       uploadBtn.innerHTML = originalText;
-      $('imageFileInput').value = ''; // Reset input so the same file can be selected again
+      $('imageFileInput').value = '';
       
-      // Re-enable delete button if an image is successfully attached
       if ($('itemImageFile').value.trim() !== '') {
         $('deleteImageBtn').disabled = false;
       }
@@ -1063,6 +1061,7 @@
     const placeholder = $('imagePlaceholder');
     const deleteBtn = $('deleteImageBtn');
     
+    // Reset state
     img.onload = null;
     img.onerror = null;
     img.classList.remove('loaded');
@@ -1080,19 +1079,13 @@
     let fileId = null;
     
     const thumbnailMatch = finalUrl.match(/[?&]id=([^&]+)/);
-    if (thumbnailMatch) {
-      fileId = thumbnailMatch[1];
-    }
+    if (thumbnailMatch) fileId = thumbnailMatch[1];
     
     const ucMatch = finalUrl.match(/\/d\/([^\/\?]+)/);
-    if (ucMatch) {
-      fileId = ucMatch[1];
-    }
+    if (ucMatch) fileId = ucMatch[1];
     
     const lhMatch = finalUrl.match(/lh3\.googleusercontent\.com\/d\/([^\/\?=]+)/);
-    if (lhMatch) {
-      fileId = lhMatch[1];
-    }
+    if (lhMatch) fileId = lhMatch[1];
     
     if (fileId) {
       finalUrl = 'https://lh3.googleusercontent.com/d/' + fileId + '=w1000';
@@ -1100,8 +1093,7 @@
     
     console.log('Loading image:', finalUrl);
     
-    img.src = finalUrl;
-    
+    // CRITICAL: Assign handlers BEFORE setting src to prevent race conditions
     img.onload = () => {
       img.classList.add('loaded');
       placeholder.style.display = 'none';
@@ -1112,6 +1104,8 @@
       img.classList.remove('loaded');
       placeholder.style.display = 'block';
     };
+    
+    img.src = finalUrl;
   }
 
   function openEdit(item) {

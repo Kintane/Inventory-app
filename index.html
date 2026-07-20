@@ -1056,9 +1056,11 @@
         
         if (myUploadId === activeImageUploadId) {
           $('itemImageFile').value = imageUrl;
-          img.src = imageUrl; 
           
-          // 3. IMMEDIATELY ASSOCIATE WITH ITEM AND SYNC
+          // 3. Keep the temporary local image visible to prevent a blank frame.
+          // The permanent URL will be loaded seamlessly the next time the item view is opened.
+          
+          // 4. IMMEDIATELY ASSOCIATE WITH ITEM AND SYNC
           const currentId = $('itemId').value;
           if (currentId && currentId.startsWith('row_')) {
             // Existing item: update and sync immediately
@@ -1130,6 +1132,7 @@
     const placeholder = $('imagePlaceholder');
     const deleteBtn = $('deleteImageBtn');
     
+    // Clean up any local URL from previous session
     if (currentLocalImageUrl) {
       URL.revokeObjectURL(currentLocalImageUrl);
       currentLocalImageUrl = null;
@@ -1221,8 +1224,6 @@
     else closeSheetInternal();
 
     if (id && id.startsWith('row_')) {
-      // If it was a new item that got auto-saved during image upload, 
-      // we still call updateItem to catch any other field changes made after upload.
       updateItem(items.find(i => i.id === id), data);
     } else {
       addItem(data);

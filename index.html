@@ -888,6 +888,14 @@
       
       const img = $('itemImageDisplay');
       const placeholder = $('imagePlaceholder');
+      
+      // Reset state before showing the newly uploaded image
+      img.onload = null;
+      img.onerror = null;
+      img.classList.remove('loaded');
+      img.src = '';
+      placeholder.style.display = 'block';
+      
       img.src = imageUrl;
       img.onload = () => {
         img.classList.add('loaded');
@@ -909,9 +917,14 @@
     const img = $('itemImageDisplay');
     const placeholder = $('imagePlaceholder');
     
+    // Immediately reset state to prevent showing the previous item's image
+    img.onload = null;
+    img.onerror = null;
+    img.classList.remove('loaded');
+    img.src = '';
+    placeholder.style.display = 'block';
+    
     if (!imageUrl || imageUrl.trim() === '') {
-      img.classList.remove('loaded');
-      placeholder.style.display = 'block';
       return;
     }
     

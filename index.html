@@ -136,7 +136,7 @@
   .confirm-dialog p { font-size: 14px; color: var(--text-dim); margin-bottom: 20px; line-height: 1.5; }
   .confirm-dialog .actions { display: flex; gap: 10px; margin-top: 0; }
 
-  /* --- NEW SHEET LAYOUT STYLES --- */
+  /* --- SHEET LAYOUT STYLES --- */
   .sheet {
     width: 100%;
     max-width: 640px;
@@ -193,18 +193,18 @@
   }
 
   .image-container {
-    width: 100%;
+    width: 66.66%; /* Covers exactly 2/3 of the screen width */
     aspect-ratio: 9 / 16;
     max-height: 65vh;
     background: var(--surface-2);
     position: relative;
     overflow: hidden;
-    border-radius: 20px 20px 0 0;
+    border-radius: 0 24px 0 0; /* Left edge flush with screen, top-right softly rounded */
   }
 
   @media (max-width: 639px) {
     .image-container {
-      border-radius: 0;
+      border-radius: 0; /* Completely flush on mobile */
     }
   }
 
@@ -213,16 +213,10 @@
     top: 0;
     right: 0;
     bottom: 0;
-    width: 70%;
-    background: linear-gradient(to right, transparent 0%, rgba(11,11,14,0.3) 30%, rgba(11,11,14,0.85) 70%, rgba(11,11,14,1) 100%);
+    width: 60%; /* Fades out over the right portion of the image container */
+    background: linear-gradient(to right, transparent 0%, var(--bg) 100%);
     pointer-events: none;
     z-index: 1;
-  }
-
-  @media (min-width: 640px) {
-    .image-fade {
-      background: linear-gradient(to right, transparent 0%, rgba(22,22,27,0.3) 30%, rgba(22,22,27,0.85) 70%, rgba(22,22,27,1) 100%);
-    }
   }
 
   .image-container img { 
@@ -285,12 +279,13 @@
   .details-panel {
     position: absolute;
     top: 75px;
-    right: 16px;
-    width: 45%;
+    right: 0;
+    width: 50%; /* Takes up about half the screen width on the right */
     z-index: 5;
     display: flex;
     flex-direction: column;
     gap: 10px;
+    padding-right: 16px;
   }
 
   .details-panel .field {
@@ -413,7 +408,7 @@
     gap: 10px;
     margin-top: 0;
   }
-  /* --- END NEW SHEET LAYOUT STYLES --- */
+  /* --- END SHEET LAYOUT STYLES --- */
 
   .btn {
     flex: 1; padding: 13px; border-radius: 12px; font-size: 15px; font-weight: 600;
@@ -596,7 +591,6 @@
   let nextRowNumber = 2;
   let searchDebounceTimer = null;
 
-  // Image upload state
   let pendingImageUpload = null;
   let activeImageUploadId = 0;
   let currentLocalImageUrl = null;
@@ -722,19 +716,15 @@
         img.onload = () => {
           let width = img.width;
           let height = img.height;
-
           if (width > maxWidth) {
             height = (height * maxWidth) / width;
             width = maxWidth;
           }
-
           const canvas = document.createElement('canvas');
           canvas.width = width;
           canvas.height = height;
           const ctx = canvas.getContext('2d');
-
           ctx.drawImage(img, 0, 0, width, height);
-
           const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
           resolve(compressedDataUrl);
         };
@@ -749,13 +739,11 @@
   async function uploadImageToDrive(file) {
     try {
       const compressedData = await compressImage(file, 481, 0.8);
-
       const result = await postToSheets({
         action: 'uploadImage',
         imageData: compressedData,
         filename: file.name.replace(/\.[^/.]+$/, "") + ".jpg"
       });
-
       return result.url;
     } catch (err) {
       throw err;
@@ -768,7 +756,6 @@
         action: 'deleteImage',
         imageUrl: imageUrl
       });
-
       return result.success;
     } catch (err) {
       console.error('Delete image failed:', err);
@@ -832,7 +819,6 @@
 
   async function deleteItem(item) {
     const originalItems = [...items];
-
     if (item.image && item.image.trim() !== '') {
       try {
         await deleteImageFromDrive(item.image);
@@ -840,7 +826,6 @@
         console.error('Failed to delete image from Drive:', err);
       }
     }
-
     items = items.filter(i => i.id !== item.id);
     saveCache(items);
     render();
@@ -1014,7 +999,6 @@
 
   $('deleteImageBtn').addEventListener('click', async () => {
     const imageUrl = $('itemImageFile').value;
-
     activeImageUploadId++;
     pendingImageUpload = null;
 
@@ -1060,7 +1044,6 @@
       $('itemImageFile').value = '';
       const img = $('itemImageDisplay');
       const placeholder = $('imagePlaceholder');
-
       img.src = '';
       img.classList.remove('loaded');
       placeholder.style.display = 'block';
@@ -1072,12 +1055,9 @@
           item.image = '';
           saveCache(items);
           render();
-          postToSheets({ action: 'update', row: item.rowNumber, image: '' })
-            .catch(err => console.error('Sync failed:', err));
           await postToSheets({ action: 'update', row: item.rowNumber, image: '' });
         }
       }
-
       toast('Image deleted');
     } catch (err) {
       console.error('Delete image failed:', err);
@@ -1144,13 +1124,6 @@
               item.image = imageUrl;
               saveCache(items);
               render();
-              postToSheets({ action: 'update', row: item.rowNumber, image: imageUrl })
-                .then(() => toast('Image saved'))
-                .catch(err => {
-                  console.error('Sync failed:', err);
-                  toast('Image saved locally, sync pending');
-                });
-              render();
               await postToSheets({ action: 'update', row: item.rowNumber, image: imageUrl });
               toast('Image saved');
             }
@@ -1175,12 +1148,6 @@
               $('itemId').value = newItem.id;
               $('deleteBtn').style.display = 'block';
 
-              postToSheets({ action: 'add', ...data })
-                .then(() => toast('New item & image saved'))
-                .catch(err => {
-                  console.error('Sync failed:', err);
-                  toast('Saved locally, sync pending');
-                });
               await postToSheets({ action: 'add', ...data });
               toast('New item & image saved');
             } else {

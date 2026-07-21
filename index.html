@@ -193,18 +193,18 @@
   }
 
   .image-container {
-    width: 66.66%; /* Covers exactly 2/3 of the screen width */
+    width: 66.66%;
     aspect-ratio: 9 / 16;
     max-height: 65vh;
     background: var(--surface-2);
     position: relative;
     overflow: hidden;
-    border-radius: 0 24px 0 0; /* Left edge flush with screen, top-right softly rounded */
+    border-radius: 0 24px 0 0;
   }
 
   @media (max-width: 639px) {
     .image-container {
-      border-radius: 0; /* Completely flush on mobile */
+      border-radius: 0;
     }
   }
 
@@ -213,7 +213,7 @@
     top: 0;
     right: 0;
     bottom: 0;
-    width: 60%; /* Fades out over the right portion of the image container */
+    width: 60%;
     background: linear-gradient(to right, transparent 0%, var(--bg) 100%);
     pointer-events: none;
     z-index: 1;
@@ -255,10 +255,10 @@
   .name-overlay input {
     width: 100%;
     padding: 12px 16px;
-    background: rgba(11, 11, 14, 0.75);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(11, 11, 14, 0.4); /* More transparent glass effect */
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255,255,255,0.12);
     border-radius: 12px;
     color: white;
     font-size: 18px;
@@ -266,13 +266,14 @@
     text-align: center;
     outline: none;
     transition: border-color 0.15s, background 0.15s;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.4); /* Subtle text shadow for readability */
   }
   .name-overlay input:focus {
     border-color: var(--accent);
-    background: rgba(11, 11, 14, 0.9);
+    background: rgba(11, 11, 14, 0.55);
   }
   .name-overlay input::placeholder {
-    color: var(--text-dim);
+    color: rgba(255,255,255,0.6);
     font-weight: 500;
   }
 
@@ -280,7 +281,7 @@
     position: absolute;
     top: 75px;
     right: 0;
-    width: 50%; /* Takes up about half the screen width on the right */
+    width: 50%;
     z-index: 5;
     display: flex;
     flex-direction: column;

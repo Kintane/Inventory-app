@@ -140,7 +140,7 @@
   .sheet {
     width: 100%;
     max-width: 640px;
-    background: var(--bg);
+    background: transparent;
     border: 1px solid var(--border);
     border-radius: 20px;
     padding: 0;
@@ -159,7 +159,7 @@
       max-height: 100vh;
       max-height: 100dvh;
       border-radius: 0;
-      background: var(--bg);
+      background: transparent;
     }
   }
 
@@ -171,7 +171,7 @@
     padding: 18px 18px 0 18px;
     position: sticky;
     top: 0;
-    background: var(--bg);
+    background: transparent;
     z-index: 10;
     text-align: center;
     position: relative;
@@ -182,13 +182,28 @@
     font-weight: 700;
     margin: 0;
     width: 100%;
+    color: var(--text);
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
   }
 
   .close-btn {
     position: absolute;
     right: 18px;
     top: 18px;
-    background: none; border: none; color: var(--text-dim); font-size: 24px; cursor: pointer; padding: 4px 8px;
+    background: rgba(11, 11, 14, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    color: var(--text-dim); 
+    font-size: 24px; 
+    cursor: pointer; 
+    padding: 4px 8px;
+    transition: all 0.15s;
+  }
+  .close-btn:hover {
+    background: rgba(11, 11, 14, 0.8);
+    color: var(--text);
   }
 
   .image-wrapper {
@@ -198,7 +213,7 @@
 
   .image-container {
     width: 66.66%;
-    aspect-ratio: 3 / 4; /* Portrait 4:3 */
+    aspect-ratio: 3 / 4;
     max-height: 65vh;
     background: var(--surface-2);
     position: relative;
@@ -218,9 +233,15 @@
     right: 0;
     bottom: 0;
     width: 60%;
-    background: linear-gradient(to right, transparent 0%, var(--bg) 100%);
+    background: linear-gradient(to right, transparent 0%, rgba(11,11,14,0.3) 30%, rgba(11,11,14,0.85) 70%, rgba(11,11,14,1) 100%);
     pointer-events: none;
     z-index: 1;
+  }
+
+  @media (min-width: 640px) {
+    .image-fade {
+      background: linear-gradient(to right, transparent 0%, rgba(22,22,27,0.3) 30%, rgba(22,22,27,0.85) 70%, rgba(22,22,27,1) 100%);
+    }
   }
 
   .image-container img { 
@@ -281,12 +302,11 @@
     font-weight: 500;
   }
 
-  /* Three dots menu button */
+  /* Three dots menu button - positioned relative to image-wrapper */
   .menu-btn {
     position: absolute;
-    right: -48px;
-    top: 50%;
-    transform: translateY(-50%);
+    top: 15px;
+    right: 16px;
     width: 38px;
     height: 38px;
     border-radius: 10px;
@@ -301,6 +321,7 @@
     cursor: pointer;
     transition: all 0.15s;
     padding: 0;
+    z-index: 6;
   }
   .menu-btn.visible {
     display: flex;
@@ -311,25 +332,25 @@
     border-color: rgba(255,255,255,0.2);
   }
   .menu-btn:active {
-    transform: translateY(-50%) scale(0.95);
+    transform: scale(0.95);
   }
   .menu-btn svg {
     width: 18px;
     height: 18px;
   }
 
-  /* Menu dropdown */
+  /* Menu dropdown - positioned relative to image-wrapper */
   .menu-dropdown {
     position: absolute;
-    top: calc(100% + 6px);
-    right: 0;
+    top: 60px;
+    right: 16px;
     min-width: 160px;
     background: var(--surface-2);
     border: 1px solid var(--border);
     border-radius: 10px;
     padding: 6px;
     box-shadow: var(--shadow);
-    z-index: 20;
+    z-index: 100;
     display: none;
     animation: popIn 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
   }
@@ -610,22 +631,24 @@
 
         <div class="name-overlay">
           <input type="text" id="itemName" required placeholder="e.g. Safety gloves" />
-          <button type="button" class="menu-btn" id="menuBtn" title="More options">
-            <svg viewBox="0 0 24 24" fill="currentColor">
-              <circle cx="12" cy="5" r="2"/>
-              <circle cx="12" cy="12" r="2"/>
-              <circle cx="12" cy="19" r="2"/>
+        </div>
+
+        <button type="button" class="menu-btn" id="menuBtn" title="More options">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="12" cy="5" r="2"/>
+            <circle cx="12" cy="12" r="2"/>
+            <circle cx="12" cy="19" r="2"/>
+          </svg>
+        </button>
+
+        <div class="menu-dropdown" id="menuDropdown">
+          <button type="button" class="menu-item danger" id="menuDeleteBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
             </svg>
+            <span>Delete item</span>
           </button>
-          <div class="menu-dropdown" id="menuDropdown">
-            <button type="button" class="menu-item danger" id="menuDeleteBtn">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="3 6 5 6 21 6"/>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-              </svg>
-              <span>Delete item</span>
-            </button>
-          </div>
         </div>
 
         <div class="details-panel">
@@ -800,7 +823,6 @@
     }
   });
 
-  // Close menu when clicking outside
   document.addEventListener('click', (e) => {
     if (isMenuOpen && !menuDropdown.contains(e.target) && !menuBtn.contains(e.target)) {
       closeMenu();
@@ -1142,10 +1164,8 @@
     if (e.target === confirmOverlay) closeConfirm(false);
   });
 
-  // Menu button handler
   menuBtn.addEventListener('click', toggleMenu);
 
-  // Menu delete handler
   $('menuDeleteBtn').addEventListener('click', async () => {
     closeMenu();
     const id = $('itemId').value;
@@ -1392,7 +1412,6 @@
     $('itemLocation').value = item ? (item.location || '') : '';
     $('itemImageFile').value = item ? (item.image || '') : '';
     
-    // Show/hide menu button based on whether editing existing item
     if (item) {
       menuBtn.classList.add('visible');
     } else {

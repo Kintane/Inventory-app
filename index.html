@@ -136,282 +136,252 @@
   .confirm-dialog p { font-size: 14px; color: var(--text-dim); margin-bottom: 20px; line-height: 1.5; }
   .confirm-dialog .actions { display: flex; gap: 10px; margin-top: 0; }
 
-  /* --- UPDATED SHEET LAYOUT --- */
   .sheet {
     width: 100%;
     max-width: 640px;
-    background: var(--surface);
+    background: rgba(22, 22, 27, 0.95);
     border: 1px solid var(--border);
     border-radius: 20px;
-    padding: 0;
     max-height: 92vh;
-    display: flex;
-    flex-direction: column;
+    overflow-y: auto;
     animation: popIn 0.25s cubic-bezier(0.2,0.8,0.2,1);
   }
 
   @media (max-width: 639px) {
+    .overlay.open { align-items: flex-start; }
     .sheet {
       height: 100vh;
       height: 100dvh;
       max-height: 100vh;
       max-height: 100dvh;
       border-radius: 0;
-      border: none;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-y: contain;
+      background: var(--surface);
     }
   }
 
-  .sheet-handle { 
-    width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 14px auto 8px; flex-shrink: 0;
-  }
   @media (min-width: 640px) {
-    .sheet-handle { margin-top: 18px; }
+    .overlay.open { align-items: center; }
+    main { max-width: 720px; margin: 0 auto; padding: 16px 24px; }
+    header { padding: 16px 24px 12px; }
   }
 
-  .sheet h2 {
-    font-size: 18px; font-weight: 700; margin: 0 18px 16px;
-    display: flex; justify-content: space-between; align-items: center;
-    flex-shrink: 0;
-  }
-  @media (min-width: 640px) {
-    .sheet h2 { margin: 0 22px 16px; }
-  }
-  .close-btn { background: none; border: none; color: var(--text-dim); font-size: 24px; cursor: pointer; padding: 4px 8px; }
+  .sheet-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 14px auto; }
 
-  .name-field-top {
-    background: var(--surface);
-    padding: 0 18px 16px;
+  /* --- NEW HERO SECTION STYLES --- */
+  .hero-section {
     position: relative;
-    z-index: 10;
-    border-bottom: 1px solid var(--border);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    flex-shrink: 0;
-  }
-  @media (min-width: 640px) {
-    .name-field-top { padding: 0 22px 16px; }
-  }
-
-  .content-row {
-    display: flex;
-    flex: 1;
-    overflow-y: auto;
-    position: relative;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .image-column {
-    width: 66.66%; /* Takes up 2/3 of the window */
-    position: relative;
-    display: flex;
-    flex-direction: column;
+    width: calc(100% + 36px);
     margin-left: -18px;
-    margin-top: -24px; /* Partially under the name cell */
-    z-index: 1;
+    margin-top: -18px;
+    height: 240px;
+    background: var(--surface-2);
+    overflow: hidden;
   }
   @media (min-width: 640px) {
-    .image-column { margin-left: -22px; }
+    .hero-section {
+      width: calc(100% + 44px);
+      margin-left: -22px;
+      margin-top: -22px;
+      border-radius: 20px 20px 0 0;
+    }
   }
 
-  .image-container {
-    width: 100%;
-    aspect-ratio: 1/1; /* Square format */
-    background: var(--surface-2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    position: relative;
-    -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
-    mask-image: linear-gradient(to right, black 85%, transparent 100%);
+  .hero-image-container {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 66%;
+    height: 100%;
+    -webkit-mask-image: linear-gradient(to right, black 65%, transparent 100%);
+    mask-image: linear-gradient(to right, black 65%, transparent 100%);
   }
-
-  .image-container img { 
+  .hero-image-container img { 
     width: 100%; 
     height: 100%; 
     object-fit: cover; 
     display: none;
   }
-  .image-container img.loaded { display: block; }
-
-  .image-placeholder { 
-    color: var(--text-faint); font-size: 13px; text-align: center; padding: 20px; 
-    position: relative; z-index: 1;
+  .hero-image-container img.loaded { display: block; }
+  
+  .image-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-faint);
   }
   .image-placeholder svg { width: 48px; height: 48px; margin-bottom: 8px; opacity: 0.5; }
 
-  .image-fade-right {
+  .sheet-top-bar {
     position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    width: 30%;
-    background: linear-gradient(to right, transparent, var(--surface));
-    pointer-events: none;
-    z-index: 2;
-  }
-
-  .image-buttons {
-    position: absolute;
-    bottom: 16px;
-    left: 16px;
-    right: 16px;
+    top: 12px;
+    right: 12px;
+    z-index: 20;
     display: flex;
+    align-items: center;
     gap: 8px;
-    z-index: 5;
   }
-
-  .image-btn {
-    flex: 1;
+  .sheet-title-text {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .close-btn {
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    padding: 10px 12px;
-    background: rgba(22, 22, 27, 0.85);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border: 1px solid var(--border);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    transition: background 0.15s;
+  }
+  .close-btn:hover { background: rgba(255,255,255,0.2); }
+
+  .hero-name {
+    position: absolute;
+    top: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 400px;
+    z-index: 10;
+    text-align: center;
+  }
+  .hero-name-input {
+    width: 100%;
+    background: rgba(11, 11, 14, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    color: white;
+    font-size: 18px;
+    font-weight: 700;
+    padding: 10px 16px;
+    text-align: center;
+    outline: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    transition: all 0.15s;
+  }
+  .hero-name-input::placeholder { color: rgba(255, 255, 255, 0.5); font-weight: 500; }
+  .hero-name-input:focus { border-color: var(--accent); background: rgba(11, 11, 14, 0.85); }
+
+  .hero-details {
+    position: absolute;
+    top: 75px;
+    right: 0;
+    width: 50%;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-right: 18px;
+  }
+  @media (max-width: 380px) {
+    .hero-details { width: 60%; top: 80px; }
+  }
+  .detail-input {
+    width: 100%;
+    background: rgba(11, 11, 14, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 10px;
-    color: var(--text);
-    font-size: 12px;
-    font-weight: 600;
+    color: white;
+    font-size: 14px;
+    padding: 8px 12px;
+    outline: none;
+    transition: all 0.15s;
+  }
+  .detail-input::placeholder { color: rgba(255, 255, 255, 0.5); }
+  .detail-input:focus { border-color: var(--accent); background: rgba(11, 11, 14, 0.85); }
+
+  .detail-row-compact {
+    display: flex;
+    gap: 6px;
+  }
+  .detail-input-compact {
+    flex: 1;
+    background: rgba(11, 11, 14, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    color: white;
+    font-size: 14px;
+    padding: 8px 6px;
+    text-align: center;
+    outline: none;
+    transition: all 0.15s;
+  }
+  .detail-input-compact::placeholder { color: rgba(255, 255, 255, 0.5); font-size: 12px; }
+  .detail-input-compact:focus { border-color: var(--accent); background: rgba(11, 11, 14, 0.85); }
+
+  .hero-image-actions {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    z-index: 10;
+    display: flex;
+    gap: 10px;
+  }
+  .icon-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(11, 11, 14, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
     transition: all 0.15s;
   }
+  .icon-btn:hover { background: var(--accent); border-color: var(--accent); }
+  .icon-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .icon-btn.delete-btn:hover { background: var(--out); border-color: var(--out); }
+  .icon-btn svg { width: 22px; height: 22px; }
+  .icon-btn.uploading svg { animation: spin 1s linear infinite; }
 
-  .image-btn:hover {
-    background: var(--accent-soft);
-    border-color: var(--accent);
-    color: var(--accent);
-  }
-
-  .image-btn.delete-btn {
-    color: var(--out);
-    border-color: rgba(255,77,94,0.3);
-  }
-
-  .image-btn.delete-btn:hover {
-    background: var(--out-soft);
-    border-color: var(--out);
-    color: var(--out);
-  }
-
-  .image-btn.delete-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-
-  .image-btn svg {
-    width: 16px;
-    height: 16px;
-  }
-
-  .details-column {
-    width: 33.33%; /* Takes up 1/3 of the window */
-    padding: 16px 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    z-index: 2;
-  }
-  @media (min-width: 640px) {
-    .details-column { padding: 16px 16px; }
-  }
-
-  /* Mobile optimization: stack columns so details remain usable, while image stays at 2/3 width */
-  @media (max-width: 639px) {
-    .content-row {
-      flex-direction: column;
-    }
-    .image-column {
-      width: 100%;
-      margin-left: 0;
-      margin-top: 0;
-      align-items: center;
-      padding-top: 12px;
-    }
-    .image-container {
-      width: 66.66%; /* Strictly 2/3 of the window width on mobile */
-      max-width: 280px;
-      aspect-ratio: 1/1;
-      -webkit-mask-image: none;
-      mask-image: none;
-      border-radius: 16px;
-      border: 1px solid var(--border);
-    }
-    .details-column {
-      width: 100%;
-      padding: 16px;
-    }
-  }
-
-  .qty-fields-row {
+  .form-actions {
     display: flex;
     gap: 10px;
-    margin-top: 4px;
+    margin-top: 20px;
+    padding: 0 4px 24px;
   }
-
-  .compact-field {
+  .form-actions .btn {
     flex: 1;
-    display: flex;
-    flex-direction: column;
-  }
-  .compact-field label {
-    font-size: 10px;
-    color: var(--text-dim);
-    margin-bottom: 4px;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 15px;
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    text-align: center;
-  }
-  .compact-field input {
-    width: 100%;
-    padding: 10px 8px;
-    background: var(--bg);
+    cursor: pointer;
     border: 1px solid var(--border);
-    border-radius: 8px;
-    color: var(--text);
-    font-size: 14px;
-    outline: none;
-    text-align: center;
+    transition: all 0.15s;
   }
-  .compact-field input:focus { border-color: var(--accent); }
-
-  .actions {
-    display: flex;
-    gap: 10px;
-    padding: 16px 18px;
-    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
-    background: var(--surface);
-    border-top: 1px solid var(--border);
-    position: sticky;
-    bottom: 0;
-    z-index: 10;
-    flex-shrink: 0;
-  }
-  @media (min-width: 640px) {
-    .actions { padding: 18px 22px 22px; }
-  }
-
-  .field { margin-bottom: 0; }
-  .field label { display: block; font-size: 13px; color: var(--text-dim); margin-bottom: 6px; font-weight: 500; }
-  .field input, .field select {
-    width: 100%; padding: 12px 14px; background: var(--bg); border: 1px solid var(--border);
-    border-radius: 10px; color: var(--text); font-size: 16px;
-    outline: none; transition: border-color 0.15s;
-  }
-  .field input:focus, .field select:focus { border-color: var(--accent); }
-
-  .btn {
-    flex: 1; padding: 13px; border-radius: 12px; font-size: 15px; font-weight: 600;
-    cursor: pointer; border: 1px solid var(--border); transition: all 0.15s;
-  }
-  .btn-primary { background: var(--accent); color: white; border-color: var(--accent); }
-  .btn-primary:active { opacity: 0.85; }
-  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-  .btn-secondary { background: var(--surface-2); color: var(--text); }
-  .btn-danger { background: var(--out-soft); color: var(--out); border-color: rgba(255,77,94,0.3); }
+  .form-actions .btn-primary { background: var(--accent); color: white; border-color: var(--accent); }
+  .form-actions .btn-primary:active { opacity: 0.85; }
+  .form-actions .btn-secondary { background: var(--surface-2); color: var(--text); }
+  .form-actions .btn-danger { background: var(--out-soft); color: var(--out); border-color: rgba(255,77,94,0.3); }
 
   .toast {
     position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
@@ -427,11 +397,6 @@
   @keyframes spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
-  }
-
-  @media (min-width: 640px) {
-    main { max-width: 720px; margin: 0 auto; padding: 16px 24px; }
-    header { padding: 16px 24px 12px; }
   }
 </style>
 </head>
@@ -474,89 +439,63 @@
 <div class="overlay" id="overlay">
   <div class="sheet">
     <div class="sheet-handle"></div>
-    <h2>
-      <span id="sheetTitle">Add equipment</span>
-      <button class="close-btn" id="closeSheet">×</button>
-    </h2>
+    
     <form id="itemForm">
       <input type="hidden" id="itemId" />
 
-      <!-- Name field at the top, covering the image partially -->
-      <div class="name-field-top">
-        <div class="field">
-          <label for="itemName">Name</label>
-          <input type="text" id="itemName" required placeholder="e.g. Safety gloves" />
+      <div class="hero-section">
+        <div class="sheet-top-bar">
+          <span id="sheetTitle" class="sheet-title-text">Add equipment</span>
+          <button type="button" class="close-btn" id="closeSheet">×</button>
         </div>
-      </div>
 
-      <div class="content-row">
-        <!-- Left: Image frame -->
-        <div class="image-column">
-          <div class="image-container" id="imageContainer">
-            <img id="itemImageDisplay" alt="Equipment image" />
-            <div class="image-placeholder" id="imagePlaceholder">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                <circle cx="8.5" cy="8.5" r="1.5"/>
-                <polyline points="21 15 16 10 5 21"/>
-              </svg>
-              <div>No image</div>
-            </div>
-            <div class="image-fade-right"></div>
-            
-            <div class="image-buttons">
-              <button type="button" class="image-btn" id="uploadBtn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                  <polyline points="17 8 12 3 7 8"/>
-                  <line x1="12" y1="3" x2="12" y2="15"/>
-                </svg>
-                <span>Upload</span>
-              </button>
-              <button type="button" class="image-btn delete-btn" id="deleteImageBtn" disabled>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="3 6 5 6 21 6"/>
-                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                  <line x1="10" y1="11" x2="10" y2="17"/>
-                  <line x1="14" y1="11" x2="14" y2="17"/>
-                </svg>
-                <span>Delete</span>
-              </button>
-            </div>
+        <div class="hero-image-container" id="imageContainer">
+          <img id="itemImageDisplay" alt="Equipment image" />
+          <div class="image-placeholder" id="imagePlaceholder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
           </div>
+        </div>
+
+        <div class="hero-name">
+          <input type="text" id="itemName" required placeholder="Equipment Name" class="hero-name-input" />
+        </div>
+
+        <div class="hero-details">
+          <input type="text" id="itemCategory" placeholder="Category" class="detail-input" />
+          <input type="text" id="itemLocation" placeholder="Location" class="detail-input" />
+          <div class="detail-row-compact">
+            <input type="number" id="itemQty" min="0" value="0" required placeholder="Qty" class="detail-input-compact" />
+            <input type="number" id="itemMin" min="0" value="5" required placeholder="Min" class="detail-input-compact" />
+            <input type="text" id="itemUnit" placeholder="Unit" class="detail-input-compact" />
+          </div>
+        </div>
+
+        <div class="hero-image-actions">
+          <button type="button" class="icon-btn" id="uploadBtn" title="Upload">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+          </button>
+          <button type="button" class="icon-btn delete-btn" id="deleteImageBtn" disabled title="Delete Image">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              <line x1="10" y1="11" x2="10" y2="17"/>
+              <line x1="14" y1="11" x2="14" y2="17"/>
+            </svg>
+          </button>
           <input type="file" id="imageFileInput" accept="image/*" />
           <input type="hidden" id="itemImageFile" />
         </div>
-
-        <!-- Right: Details -->
-        <div class="details-column">
-          <div class="field">
-            <label for="itemCategory">Category</label>
-            <input type="text" id="itemCategory" placeholder="PPE, Tools..." />
-          </div>
-          <div class="field">
-            <label for="itemLocation">Location</label>
-            <input type="text" id="itemLocation" placeholder="Shelf A3..." />
-          </div>
-          <div class="qty-fields-row">
-            <div class="compact-field">
-              <label for="itemQty">Qty</label>
-              <input type="number" id="itemQty" min="0" value="0" required />
-            </div>
-            <div class="compact-field">
-              <label for="itemMin">Min</label>
-              <input type="number" id="itemMin" min="0" value="5" required />
-            </div>
-            <div class="compact-field">
-              <label for="itemUnit">Unit</label>
-              <input type="text" id="itemUnit" placeholder="pcs" />
-            </div>
-          </div>
-        </div>
       </div>
 
-      <!-- Final row: Actions -->
-      <div class="actions">
+      <div class="form-actions">
         <button type="button" class="btn btn-danger" id="deleteBtn" style="display:none">Delete</button>
         <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
         <button type="submit" class="btn btn-primary" id="saveBtn">Save</button>
@@ -596,7 +535,6 @@
   let nextRowNumber = 2;
   let searchDebounceTimer = null;
 
-  // Image upload state
   let pendingImageUpload = null;
   let activeImageUploadId = 0;
   let currentLocalImageUrl = null;
@@ -604,7 +542,6 @@
   const $ = id => document.getElementById(id);
   const listEl = $('list');
   const overlay = $('overlay');
-  const sheet = overlay.querySelector('.sheet');
   const categorySelect = $('categorySelect');
   const limitSelect = $('limitSelect');
   const confirmOverlay = $('confirmOverlay');
@@ -1015,7 +952,6 @@
   $('deleteImageBtn').addEventListener('click', async () => {
     const imageUrl = $('itemImageFile').value;
 
-    // Invalidate any pending background upload
     activeImageUploadId++;
     pendingImageUpload = null;
 
@@ -1029,7 +965,7 @@
       const placeholder = $('imagePlaceholder');
       img.src = '';
       img.classList.remove('loaded');
-      placeholder.style.display = 'block';
+      placeholder.style.display = 'flex';
       $('deleteImageBtn').disabled = true;
       return;
     }
@@ -1064,9 +1000,8 @@
 
       img.src = '';
       img.classList.remove('loaded');
-      placeholder.style.display = 'block';
+      placeholder.style.display = 'flex';
 
-      // IMMEDIATELY UPDATE ITEM AND SYNC
       const currentId = $('itemId').value;
       if (currentId && currentId.startsWith('row_')) {
         const item = items.find(i => i.id === currentId);
@@ -1102,7 +1037,6 @@
     activeImageUploadId++;
     const myUploadId = activeImageUploadId;
 
-    // 1. Immediate local preview
     if (currentLocalImageUrl) {
       URL.revokeObjectURL(currentLocalImageUrl);
     }
@@ -1116,7 +1050,6 @@
     placeholder.style.display = 'none';
     $('deleteImageBtn').disabled = false;
 
-    // 2. Background upload processing
     const uploadBtn = $('uploadBtn');
     const originalText = uploadBtn.innerHTML;
     uploadBtn.classList.add('uploading');
@@ -1140,7 +1073,7 @@
 
         if (myUploadId === activeImageUploadId) {
           $('itemImageFile').value = imageUrl;
-
+          
           const currentId = $('itemId').value;
           if (currentId && currentId.startsWith('row_')) {
             const item = items.find(i => i.id === currentId);
@@ -1221,7 +1154,7 @@
 
     img.src = '';
     img.classList.remove('loaded');
-    placeholder.style.display = 'block';
+    placeholder.style.display = 'flex';
 
     if (!imageUrl || imageUrl.trim() === '') {
       deleteBtn.disabled = true;
@@ -1256,7 +1189,7 @@
     img.onerror = () => {
       console.error('Failed to load image:', finalUrl);
       img.classList.remove('loaded');
-      placeholder.style.display = 'block';
+      placeholder.style.display = 'flex';
     };
   }
 
@@ -1274,6 +1207,7 @@
 
     loadImage(item ? item.image : '');
 
+    const sheet = overlay.querySelector('.sheet');
     sheet.scrollTop = 0;
     history.pushState({ modal: true }, '');
     isModalOpen = true;

@@ -173,19 +173,23 @@
     top: 0;
     background: var(--bg);
     z-index: 10;
+    text-align: center;
+    position: relative;
   }
 
   .sheet h2 {
     font-size: 18px;
     font-weight: 700;
     margin: 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     width: 100%;
   }
 
-  .close-btn { background: none; border: none; color: var(--text-dim); font-size: 24px; cursor: pointer; padding: 4px 8px; }
+  .close-btn {
+    position: absolute;
+    right: 18px;
+    top: 18px;
+    background: none; border: none; color: var(--text-dim); font-size: 24px; cursor: pointer; padding: 4px 8px;
+  }
 
   .image-wrapper {
     position: relative;
@@ -194,7 +198,7 @@
 
   .image-container {
     width: 66.66%;
-    aspect-ratio: 9 / 16;
+    aspect-ratio: 3 / 4; /* Portrait 4:3 */
     max-height: 65vh;
     background: var(--surface-2);
     position: relative;
@@ -255,7 +259,7 @@
   .name-overlay input {
     width: 100%;
     padding: 12px 16px;
-    background: rgba(11, 11, 14, 0.6); /* More transparent glass effect */
+    background: rgba(11, 11, 14, 0.4);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
     border: 1px solid rgba(255,255,255,0.12);
@@ -266,7 +270,7 @@
     text-align: center;
     outline: none;
     transition: border-color 0.15s, background 0.15s;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.4); /* Subtle text shadow for readability */
+    text-shadow: 0 1px 2px rgba(0,0,0,0.4);
   }
   .name-overlay input:focus {
     border-color: var(--accent);
@@ -275,6 +279,92 @@
   .name-overlay input::placeholder {
     color: rgba(255,255,255,0.6);
     font-weight: 500;
+  }
+
+  /* Three dots menu button */
+  .menu-btn {
+    position: absolute;
+    right: -48px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: rgba(11, 11, 14, 0.5);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: var(--text-dim);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    padding: 0;
+  }
+  .menu-btn.visible {
+    display: flex;
+  }
+  .menu-btn:hover {
+    background: rgba(11, 11, 14, 0.75);
+    color: var(--text);
+    border-color: rgba(255,255,255,0.2);
+  }
+  .menu-btn:active {
+    transform: translateY(-50%) scale(0.95);
+  }
+  .menu-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  /* Menu dropdown */
+  .menu-dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    min-width: 160px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 6px;
+    box-shadow: var(--shadow);
+    z-index: 20;
+    display: none;
+    animation: popIn 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .menu-dropdown.open {
+    display: block;
+  }
+  .menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 12px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .menu-item:hover {
+    background: rgba(255,255,255,0.05);
+  }
+  .menu-item.danger {
+    color: var(--out);
+  }
+  .menu-item.danger:hover {
+    background: var(--out-soft);
+  }
+  .menu-item svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
   }
 
   .details-panel {
@@ -399,15 +489,26 @@
     height: 20px;
   }
 
-  .form-content {
-    padding: 20px 18px 24px 18px;
-    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  /* Stacked action buttons - bottom right of image */
+  .action-buttons-stacked {
+    position: absolute;
+    bottom: 15px;
+    right: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 5;
   }
 
-  .actions.below-image {
-    display: flex;
-    gap: 10px;
-    margin-top: 0;
+  .action-buttons-stacked .btn {
+    width: 130px;
+    padding: 11px 14px;
+    font-size: 14px;
+    flex: none;
+  }
+
+  .form-content {
+    display: none;
   }
   /* --- END SHEET LAYOUT STYLES --- */
 
@@ -484,8 +585,8 @@
     <div class="sheet-header">
       <h2>
         <span id="sheetTitle">Add equipment</span>
-        <button class="close-btn" id="closeSheet">×</button>
       </h2>
+      <button class="close-btn" id="closeSheet">×</button>
     </div>
     
     <form id="itemForm">
@@ -509,6 +610,22 @@
 
         <div class="name-overlay">
           <input type="text" id="itemName" required placeholder="e.g. Safety gloves" />
+          <button type="button" class="menu-btn" id="menuBtn" title="More options">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <circle cx="12" cy="5" r="2"/>
+              <circle cx="12" cy="12" r="2"/>
+              <circle cx="12" cy="19" r="2"/>
+            </svg>
+          </button>
+          <div class="menu-dropdown" id="menuDropdown">
+            <button type="button" class="menu-item danger" id="menuDeleteBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              </svg>
+              <span>Delete item</span>
+            </button>
+          </div>
         </div>
 
         <div class="details-panel">
@@ -548,13 +665,10 @@
             </svg>
           </button>
         </div>
-      </div>
 
-      <div class="form-content">
-        <div class="actions below-image">
-          <button type="button" class="btn btn-danger" id="deleteBtn" style="display:none">Delete</button>
-          <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+        <div class="action-buttons-stacked">
           <button type="submit" class="btn btn-primary" id="saveBtn">Save</button>
+          <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
         </div>
       </div>
     </form>
@@ -603,10 +717,13 @@
   const categorySelect = $('categorySelect');
   const limitSelect = $('limitSelect');
   const confirmOverlay = $('confirmOverlay');
+  const menuBtn = $('menuBtn');
+  const menuDropdown = $('menuDropdown');
 
   let isModalOpen = false;
   let isConfirmOpen = false;
   let confirmResolver = null;
+  let isMenuOpen = false;
 
   function showConfirm(title, message, okLabel = 'Delete') {
     return new Promise((resolve) => {
@@ -640,6 +757,7 @@
   function closeSheetInternal() {
     overlay.classList.remove('open');
     isModalOpen = false;
+    closeMenu();
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
   }
 
@@ -647,6 +765,25 @@
     if (isModalOpen) {
       if (history.state && history.state.modal) history.back();
       else closeSheetInternal();
+    }
+  }
+
+  function openMenu() {
+    menuDropdown.classList.add('open');
+    isMenuOpen = true;
+  }
+
+  function closeMenu() {
+    menuDropdown.classList.remove('open');
+    isMenuOpen = false;
+  }
+
+  function toggleMenu(e) {
+    e.stopPropagation();
+    if (isMenuOpen) {
+      closeMenu();
+    } else {
+      openMenu();
     }
   }
 
@@ -660,6 +797,13 @@
       const isInput = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT');
       if (isInput) { active.blur(); closeSheetInternal(); }
       else { closeSheetInternal(); }
+    }
+  });
+
+  // Close menu when clicking outside
+  document.addEventListener('click', (e) => {
+    if (isMenuOpen && !menuDropdown.contains(e.target) && !menuBtn.contains(e.target)) {
+      closeMenu();
     }
   });
 
@@ -739,7 +883,7 @@
 
   async function uploadImageToDrive(file) {
     try {
-      const compressedData = await compressImage(file, 600, 0.8);
+      const compressedData = await compressImage(file, 481, 0.8);
       const result = await postToSheets({
         action: 'uploadImage',
         imageData: compressedData,
@@ -998,6 +1142,19 @@
     if (e.target === confirmOverlay) closeConfirm(false);
   });
 
+  // Menu button handler
+  menuBtn.addEventListener('click', toggleMenu);
+
+  // Menu delete handler
+  $('menuDeleteBtn').addEventListener('click', async () => {
+    closeMenu();
+    const id = $('itemId').value;
+    if (!id || !id.startsWith('row_')) return;
+    const item = items.find(i => i.id === id);
+    const confirmed = await showConfirm('Delete item?', `"${item ? item.name : 'This item'}" will be permanently removed along with its image.`, 'Delete');
+    if (confirmed) { closeSheet(); deleteItem(item); }
+  });
+
   $('deleteImageBtn').addEventListener('click', async () => {
     const imageUrl = $('itemImageFile').value;
     activeImageUploadId++;
@@ -1147,7 +1304,7 @@
               render();
 
               $('itemId').value = newItem.id;
-              $('deleteBtn').style.display = 'block';
+              menuBtn.classList.add('visible');
 
               await postToSheets({ action: 'add', ...data });
               toast('New item & image saved');
@@ -1234,7 +1391,14 @@
     $('itemCategory').value = item ? (item.category || '') : '';
     $('itemLocation').value = item ? (item.location || '') : '';
     $('itemImageFile').value = item ? (item.image || '') : '';
-    $('deleteBtn').style.display = item ? 'block' : 'none';
+    
+    // Show/hide menu button based on whether editing existing item
+    if (item) {
+      menuBtn.classList.add('visible');
+    } else {
+      menuBtn.classList.remove('visible');
+    }
+    closeMenu();
 
     loadImage(item ? item.image : '');
 
@@ -1273,14 +1437,6 @@
     } else {
       addItem(data);
     }
-  });
-
-  $('deleteBtn').addEventListener('click', async () => {
-    const id = $('itemId').value;
-    if (!id || !id.startsWith('row_')) return;
-    const item = items.find(i => i.id === id);
-    const confirmed = await showConfirm('Delete item?', `"${item ? item.name : 'This item'}" will be permanently removed along with its image.`, 'Delete');
-    if (confirmed) { closeSheet(); deleteItem(item); }
   });
 
   let toastTimer;

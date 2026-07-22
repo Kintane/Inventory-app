@@ -352,6 +352,7 @@
     to { transform: rotate(360deg); }
   }
 
+  /* Lightbox Styles */
   .lightbox {
     position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 200;
     display: none; justify-content: center; align-items: center;
@@ -413,6 +414,7 @@
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
 </button>
 
+<!-- Add/Edit Sheet -->
 <div class="overlay" id="overlay">
   <div class="sheet">
     <div class="sheet-handle"></div>
@@ -503,6 +505,7 @@
   </div>
 </div>
 
+<!-- Custom Confirm Dialog -->
 <div class="confirm-overlay" id="confirmOverlay">
   <div class="confirm-dialog">
     <h3 id="confirmTitle">Confirm</h3>
@@ -514,6 +517,7 @@
   </div>
 </div>
 
+<!-- Lightbox for High Quality Images -->
 <div class="lightbox" id="lightbox">
   <button class="lightbox-close" id="lightboxClose">×</button>
   <img class="lightbox-img" id="lightboxImg" alt="High quality equipment image" />
@@ -676,79 +680,84 @@
     return result;
   }
 
-  // HIGH-QUALITY MULTI-STEP IMAGE RESIZING
+  // HIGH-QUALITY IMAGE COMPRESSION ENGINE
   async function compressImage(file, maxWidth = 1200, quality = 0.85) {
     return new Promise((resolve, reject) => {
-      const reader = new FileReader();
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
       
-      reader.onload = (e) => {
-        const img = new Image();
+      img.onload = async () => {
+        let targetWidth = img.width;
+        let targetHeight = img.height;
         
-        img.onload = () => {
+        if (targetWidth > maxWidth) {
+          targetHeight = Math.round((targetHeight * maxWidth) / targetWidth);
+          targetWidth = maxWidth;
+        }
+
+        // 1. Try modern high-quality resize API first (Chrome 111+, Safari 15.4+)
+        if (window.createImageBitmap) {
           try {
-            let targetWidth = img.width;
-            let targetHeight = img.height;
-            
-            if (targetWidth > maxWidth) {
-              targetHeight = Math.round((targetHeight * maxWidth) / targetWidth);
-              targetWidth = maxWidth;
-            }
-
-            // Multi-step downscaling for high quality (prevents jagged edges)
-            let currentCanvas = document.createElement('canvas');
-            let currentCtx = currentCanvas.getContext('2d');
-            currentCanvas.width = img.width;
-            currentCanvas.height = img.height;
-            currentCtx.drawImage(img, 0, 0);
-
-            let currWidth = img.width;
-            let currHeight = img.height;
-
-            // Step down by half until we're close to target size
-            while (currWidth > targetWidth * 2) {
-              const stepCanvas = document.createElement('canvas');
-              const stepWidth = Math.round(currWidth / 2);
-              const stepHeight = Math.round(currHeight / 2);
-              stepCanvas.width = stepWidth;
-              stepCanvas.height = stepHeight;
-              
-              const stepCtx = stepCanvas.getContext('2d');
-              stepCtx.imageSmoothingEnabled = true;
-              stepCtx.imageSmoothingQuality = 'high';
-              stepCtx.drawImage(currentCanvas, 0, 0, stepWidth, stepHeight);
-              
-              currentCanvas = stepCanvas;
-              currWidth = stepWidth;
-              currHeight = stepHeight;
-            }
-
-            // Final resize to exact target dimensions
-            const finalCanvas = document.createElement('canvas');
-            finalCanvas.width = targetWidth;
-            finalCanvas.height = targetHeight;
-            
-            const finalCtx = finalCanvas.getContext('2d');
-            finalCtx.imageSmoothingEnabled = true;
-            finalCtx.imageSmoothingQuality = 'high';
-            finalCtx.drawImage(currentCanvas, 0, 0, targetWidth, targetHeight);
-
-            const dataUrl = finalCanvas.toDataURL('image/jpeg', quality);
+            const bitmap = await createImageBitmap(file, {
+              resizeWidth: targetWidth,
+              resizeHeight: targetHeight,
+              resizeQuality: 'high'
+            });
+            const canvas = document.createElement('canvas');
+            canvas.width = targetWidth;
+            canvas.height = targetHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(bitmap, 0, 0, targetWidth, targetHeight);
+            const dataUrl = canvas.toDataURL('image/jpeg', quality);
+            URL.revokeObjectURL(objectUrl);
             resolve(dataUrl);
-          } catch (err) {
-            reject(err);
+            return;
+          } catch (e) {
+            console.warn('createImageBitmap resize failed, falling back to multi-step', e);
           }
-        };
+        }
+
+        // 2. Fallback: High-quality multi-step downscaling (prevents jagged aliasing)
+        let currWidth = img.width;
+        let currHeight = img.height;
+        let source = img;
         
-        img.onerror = () => reject(new Error('Failed to load image'));
-        img.src = e.target.result;
+        // Step down by half until we are within 2x of the target size
+        while (currWidth > targetWidth * 2) {
+          const stepCanvas = document.createElement('canvas');
+          stepCanvas.width = Math.round(currWidth / 2);
+          stepCanvas.height = Math.round(currHeight / 2);
+          const stepCtx = stepCanvas.getContext('2d');
+          stepCtx.drawImage(source, 0, 0, stepCanvas.width, stepCanvas.height);
+          
+          currWidth = stepCanvas.width;
+          currHeight = stepCanvas.height;
+          source = stepCanvas;
+        }
+        
+        // Final step to exact target size
+        const finalCanvas = document.createElement('canvas');
+        finalCanvas.width = targetWidth;
+        finalCanvas.height = targetHeight;
+        const finalCtx = finalCanvas.getContext('2d');
+        finalCtx.drawImage(source, 0, 0, targetWidth, targetHeight);
+        
+        const dataUrl = finalCanvas.toDataURL('image/jpeg', quality);
+        URL.revokeObjectURL(objectUrl);
+        resolve(dataUrl);
       };
       
-      reader.onerror = () => reject(new Error('Failed to read file'));
-      reader.readAsDataURL(file);
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error('Failed to load image'));
+      };
+      
+      img.src = objectUrl;
     });
   }
 
   async function uploadImageToDrive(file) {
+    // Optimized quality settings: 0.85 for thumb (small size, crisp text), 0.90 for HQ
     const thumbData = await compressImage(file, 480, 0.85);
     const hqData = await compressImage(file, 1920, 0.90);
 

@@ -708,8 +708,8 @@
   }
 
   async function uploadImageToDrive(file) {
-    const thumbData = await compressImage(file, 480, 0.8);
-    const hqData = await compressImage(file, 1920, 0.9);
+    const thumbData = await compressImage(file, 480, 0.4);
+    const hqData = await compressImage(file, 800, 0.9);
 
     const result = await postToSheets({
       action: 'uploadImage',

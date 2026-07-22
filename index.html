@@ -758,8 +758,8 @@
 
   async function uploadImageToDrive(file) {
     // Optimized quality settings: 0.85 for thumb (small size, crisp text), 0.90 for HQ
-    const thumbData = await compressImage(file, 480, 0.85);
-    const hqData = await compressImage(file, 800, 0.8);
+    const thumbData = await compressImage(file, 480, 0.4);
+    const hqData = await compressImage(file, 800, 0.6);
 
     const result = await postToSheets({
       action: 'uploadImage',

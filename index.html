@@ -465,7 +465,8 @@
             </button>
           </div>
           <input type="file" id="imageFileInput" accept="image/*" />
-          <input type="hidden" id="itemImageFile" />
+          <input type="hidden" id="itemImageThumb" />
+          <input type="hidden" id="itemImageHq" />
         </div>
 
         <div class="qty-fields-column">
@@ -526,8 +527,8 @@
 
 <script>
 (() => {
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyRKMcXFnX64MMsYCnoNalpKojTqNbT1Jv3thP9RMZf7YnANHYzyLlQGqmXe3eMON2mcw/exec';
-  const CACHE_KEY = 'equipment_cache_v3'; // Bumped version for new JSON image format
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyp3F2p3QB2N9lMSz4Ihy4hFw7Evbnwc4aBAKwuUQbS2JrfUTvEcUYI4mmym27cJMbHdQ/exec';
+  const CACHE_KEY = 'equipment_cache_v4'; // Bumped for new column structure
   const CACHE_MAX_AGE = 24 * 60 * 60 * 1000;
   const SEARCH_DEBOUNCE_MS = 300;
   const DEFAULT_LIMIT = 20;
@@ -541,12 +542,10 @@
   let nextRowNumber = 2;
   let searchDebounceTimer = null;
 
-  // Image upload state
   let pendingImageUpload = null;
   let activeImageUploadId = 0;
   let currentLocalImageUrl = null;
 
-  // Modal states
   let isModalOpen = false;
   let isConfirmOpen = false;
   let isLightboxOpen = false;
@@ -709,7 +708,6 @@
   }
 
   async function uploadImageToDrive(file) {
-    // Generate both thumbnail and high-quality versions
     const thumbData = await compressImage(file, 480, 0.8);
     const hqData = await compressImage(file, 1920, 0.9);
 
@@ -724,18 +722,18 @@
     return { thumb: result.thumbUrl, hq: result.hqUrl };
   }
 
-  function getImageUrls(imageStr) {
-    if (!imageStr) return { thumb: '', hq: '' };
-    try {
-      const parsed = JSON.parse(imageStr);
-      return { 
-        thumb: parsed.thumb || '', 
-        hq: parsed.hq || parsed.thumb || '' 
-      };
-    } catch (e) {
-      // Legacy string format fallback
-      return { thumb: imageStr, hq: imageStr };
+  // Helper to gracefully handle legacy single-column JSON or new separate columns
+  function getImageData(item) {
+    if (!item) return { thumb: '', hq: '' };
+    if (item.image && typeof item.image === 'string') {
+      try {
+        const parsed = JSON.parse(item.image);
+        return { thumb: parsed.thumb || item.image, hq: parsed.hq || item.image };
+      } catch (e) {
+        return { thumb: item.image, hq: item.image };
+      }
     }
+    return { thumb: item.thumb || '', hq: item.hq || '' };
   }
 
   function getOptimizedDriveUrl(url, size = 'w1000') {
@@ -755,11 +753,10 @@
     return finalUrl;
   }
 
-  async function deleteImageFromDrive(imageStr) {
-    const urls = getImageUrls(imageStr);
+  async function deleteImageFromDrive(thumbUrl, hqUrl) {
     const payload = { action: 'deleteImage' };
-    if (urls.thumb) payload.thumbUrl = urls.thumb;
-    if (urls.hq && urls.hq !== urls.thumb) payload.hqUrl = urls.hq; // Deduplicate
+    if (thumbUrl) payload.thumbUrl = thumbUrl;
+    if (hqUrl && hqUrl !== thumbUrl) payload.hqUrl = hqUrl;
     
     if (!payload.thumbUrl && !payload.hqUrl) return true;
 
@@ -828,10 +825,11 @@
 
   async function deleteItem(item) {
     const originalItems = [...items];
+    const imgData = getImageData(item);
 
-    if (item.image && item.image.trim() !== '') {
+    if (imgData.thumb || imgData.hq) {
       try {
-        await deleteImageFromDrive(item.image);
+        await deleteImageFromDrive(imgData.thumb, imgData.hq);
       } catch (err) {
         console.error('Failed to delete image from Drive:', err);
       }
@@ -1009,7 +1007,8 @@
   });
 
   $('deleteImageBtn').addEventListener('click', async () => {
-    const imageStr = $('itemImageFile').value;
+    const thumbUrl = $('itemImageThumb').value;
+    const hqUrl = $('itemImageHq').value;
 
     activeImageUploadId++;
     pendingImageUpload = null;
@@ -1019,8 +1018,7 @@
       currentLocalImageUrl = null;
     }
 
-    const urls = getImageUrls(imageStr);
-    if (!urls.thumb && !urls.hq) {
+    if (!thumbUrl && !hqUrl) {
       const img = $('itemImageDisplay');
       const placeholder = $('imagePlaceholder');
       const imageContainer = $('imageContainer');
@@ -1035,7 +1033,7 @@
       return;
     }
 
-    const confirmed = await showConfirm('Delete image?', 'This will delete the image(s) from Google Drive and remove them from this item.', 'Delete Image');
+    const confirmed = await showConfirm('Delete image?', 'This will delete the images from Google Drive and remove them from this item.', 'Delete Image');
     if (!confirmed) return;
 
     const deleteBtn = $('deleteImageBtn');
@@ -1053,9 +1051,11 @@
         <span>Deleting...</span>
       `;
 
-      await deleteImageFromDrive(imageStr);
+      await deleteImageFromDrive(thumbUrl, hqUrl);
 
-      $('itemImageFile').value = '';
+      $('itemImageThumb').value = '';
+      $('itemImageHq').value = '';
+      
       const img = $('itemImageDisplay');
       const placeholder = $('imagePlaceholder');
       const imageContainer = $('imageContainer');
@@ -1072,10 +1072,12 @@
       if (currentId && currentId.startsWith('row_')) {
         const item = items.find(i => i.id === currentId);
         if (item) {
-          item.image = '';
+          item.thumb = '';
+          item.hq = '';
+          delete item.image; // clean up legacy
           saveCache(items);
           render();
-          await postToSheets({ action: 'update', row: item.rowNumber, image: '' });
+          await postToSheets({ action: 'update', row: item.rowNumber, thumb: '', hq: '' });
         }
       }
       toast('Image deleted');
@@ -1131,16 +1133,19 @@
         const imageUrls = await uploadImageToDrive(file);
 
         if (myUploadId === activeImageUploadId) {
-          $('itemImageFile').value = JSON.stringify(imageUrls);
+          $('itemImageThumb').value = imageUrls.thumb;
+          $('itemImageHq').value = imageUrls.hq;
 
           const currentId = $('itemId').value;
           if (currentId && currentId.startsWith('row_')) {
             const item = items.find(i => i.id === currentId);
             if (item) {
-              item.image = JSON.stringify(imageUrls);
+              item.thumb = imageUrls.thumb;
+              item.hq = imageUrls.hq;
+              delete item.image; // clean up legacy
               saveCache(items);
               render();
-              await postToSheets({ action: 'update', row: item.rowNumber, image: JSON.stringify(imageUrls) });
+              await postToSheets({ action: 'update', row: item.rowNumber, thumb: imageUrls.thumb, hq: imageUrls.hq });
               toast('Image saved');
             }
           } else {
@@ -1153,7 +1158,8 @@
                 unit: $('itemUnit').value.trim(),
                 category: $('itemCategory').value.trim(),
                 location: $('itemLocation').value.trim(),
-                image: JSON.stringify(imageUrls)
+                thumb: imageUrls.thumb,
+                hq: imageUrls.hq
               };
               const newItem = { id: 'row_' + nextRowNumber, rowNumber: nextRowNumber, ...data };
               items.push(newItem);
@@ -1188,7 +1194,7 @@
     $('imageFileInput').value = '';
   });
 
-  function loadImage(imageStr) {
+  function loadImage(thumbUrl, hqUrl) {
     const img = $('itemImageDisplay');
     const placeholder = $('imagePlaceholder');
     const deleteBtn = $('deleteImageBtn');
@@ -1207,16 +1213,15 @@
     imageContainer.onclick = null;
     placeholder.style.display = 'block';
 
-    const urls = getImageUrls(imageStr);
-    if (!urls.thumb && !urls.hq) {
+    if (!thumbUrl && !hqUrl) {
       deleteBtn.disabled = true;
       return;
     }
 
     deleteBtn.disabled = false;
 
-    const thumbDisplayUrl = getOptimizedDriveUrl(urls.thumb, 'w480');
-    const hqDisplayUrl = getOptimizedDriveUrl(urls.hq, '800');
+    const thumbDisplayUrl = getOptimizedDriveUrl(thumbUrl, 'w480');
+    const hqDisplayUrl = getOptimizedDriveUrl(hqUrl, 'w1920');
 
     img.src = thumbDisplayUrl;
     img.onload = () => {
@@ -1248,10 +1253,14 @@
     $('itemUnit').value = item ? (item.unit || '') : '';
     $('itemCategory').value = item ? (item.category || '') : '';
     $('itemLocation').value = item ? (item.location || '') : '';
-    $('itemImageFile').value = item ? (item.image || '') : '';
+    
+    const imgData = getImageData(item);
+    $('itemImageThumb').value = imgData.thumb;
+    $('itemImageHq').value = imgData.hq;
+    
     $('deleteBtn').style.display = item ? 'block' : 'none';
 
-    loadImage(item ? item.image : '');
+    loadImage(imgData.thumb, imgData.hq);
 
     sheet.scrollTop = 0;
     history.pushState({ modal: true }, '');
@@ -1276,7 +1285,8 @@
       unit: $('itemUnit').value.trim(),
       category: $('itemCategory').value.trim(),
       location: $('itemLocation').value.trim(),
-      image: $('itemImageFile').value.trim()
+      thumb: $('itemImageThumb').value.trim(),
+      hq: $('itemImageHq').value.trim()
     };
     if (!data.name) return;
 

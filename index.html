@@ -136,19 +136,16 @@
   .confirm-dialog p { font-size: 14px; color: var(--text-dim); margin-bottom: 20px; line-height: 1.5; }
   .confirm-dialog .actions { display: flex; gap: 10px; margin-top: 0; }
 
-  /* --- SHEET LAYOUT STYLES --- */
   .sheet {
     width: 100%;
     max-width: 640px;
-    background: transparent;
+    background: rgba(22, 22, 27, 0.82);
     border: 1px solid var(--border);
     border-radius: 20px;
-    padding: 0;
+    padding: 22px;
     max-height: 92vh;
     overflow-y: auto;
     animation: popIn 0.25s cubic-bezier(0.2,0.8,0.2,1);
-    display: flex;
-    flex-direction: column;
   }
 
   @media (max-width: 639px) {
@@ -159,380 +156,176 @@
       max-height: 100vh;
       max-height: 100dvh;
       border-radius: 0;
-      background: transparent;
+      padding: 18px;
+      padding-top: calc(18px + env(safe-area-inset-top, 0px));
+      padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-y: contain;
+      background: rgba(22, 22, 27, 0.22);
+      backdrop-filter: blur(20px) saturate(1.4);
+      -webkit-backdrop-filter: blur(24px) saturate(1.4);
     }
-  }
+}
 
   @media (min-width: 640px) {
     .overlay.open { align-items: center; }
   }
 
-  .sheet-header {
-    padding: 18px 18px 0 18px;
-    position: sticky;
-    top: 0;
-    background: transparent;
-    z-index: 10;
-    text-align: center;
-    position: relative;
-  }
-
+  .sheet-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 14px; }
   .sheet h2 {
-    font-size: 18px;
-    font-weight: 700;
-    margin: 0;
-    width: 100%;
-    color: var(--text);
-    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    font-size: 18px; font-weight: 700; margin-bottom: 16px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .close-btn { background: none; border: none; color: var(--text-dim); font-size: 24px; cursor: pointer; padding: 4px 8px; }
+
+  .name-field { margin-bottom: 14px; }
+
+  .image-qty-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 12px;
+    margin-bottom: 14px;
+    align-items: start;
   }
 
-  .close-btn {
-    position: absolute;
-    right: 18px;
-    top: 18px;
-    background: rgba(11, 11, 14, 0.6);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 10px;
-    color: var(--text-dim); 
-    font-size: 24px; 
-    cursor: pointer; 
-    padding: 4px 8px;
-    transition: all 0.15s;
-  }
-  .close-btn:hover {
-    background: rgba(11, 11, 14, 0.8);
-    color: var(--text);
-  }
-
-  .image-wrapper {
-    position: relative;
-    width: 100%;
+  .image-column {
+    display: flex;
+    flex-direction: column;
   }
 
   .image-container {
-    width: 66.66%;
-    aspect-ratio: 3 / 4;
-    max-height: 65vh;
+    width: 100%;
+    aspect-ratio: 16/9;
     background: var(--surface-2);
-    position: relative;
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     overflow: hidden;
-    border-radius: 0 24px 0 0;
+    position: relative;
   }
-
-  @media (max-width: 639px) {
-    .image-container {
-      border-radius: 0;
-    }
-  }
-
-  .image-fade {
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    width: 60%;
-    background: linear-gradient(to right, transparent 0%, rgba(11,11,14,0.3) 30%, rgba(11,11,14,0.85) 70%, rgba(11,11,14,1) 100%);
-    pointer-events: none;
-    z-index: 1;
-  }
-
-  @media (min-width: 640px) {
-    .image-fade {
-      background: linear-gradient(to right, transparent 0%, rgba(22,22,27,0.3) 30%, rgba(22,22,27,0.85) 70%, rgba(22,22,27,1) 100%);
-    }
-  }
-
   .image-container img { 
     width: 100%; 
     height: 100%; 
     object-fit: cover; 
     display: none;
-    position: relative;
-    z-index: 0;
   }
   .image-container img.loaded { display: block; }
-
-  .image-placeholder { 
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: var(--text-faint); 
-    font-size: 13px; 
-    text-align: center; 
-    z-index: 0;
-    width: 100%;
-  }
+  .image-placeholder { color: var(--text-faint); font-size: 13px; text-align: center; padding: 20px; }
   .image-placeholder svg { width: 48px; height: 48px; margin-bottom: 8px; opacity: 0.5; }
 
-  .name-overlay {
-    position: absolute;
-    top: 15px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 80%;
-    max-width: 320px;
-    z-index: 5;
-  }
-
-  .name-overlay input {
-    width: 100%;
-    padding: 12px 16px;
-    background: rgba(11, 11, 14, 0.4);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    border: 1px solid rgba(255,255,255,0.12);
-    border-radius: 12px;
-    color: white;
-    font-size: 18px;
-    font-weight: 600;
-    text-align: center;
-    outline: none;
-    transition: border-color 0.15s, background 0.15s;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.4);
-  }
-  .name-overlay input:focus {
-    border-color: var(--accent);
-    background: rgba(11, 11, 14, 0.55);
-  }
-  .name-overlay input::placeholder {
-    color: rgba(255,255,255,0.6);
-    font-weight: 500;
-  }
-
-  /* Three dots menu button - positioned relative to image-wrapper */
-  .menu-btn {
-    position: absolute;
-    top: 15px;
-    right: 16px;
-    width: 38px;
-    height: 38px;
-    border-radius: 10px;
-    background: rgba(11, 11, 14, 0.5);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255,255,255,0.12);
-    color: var(--text-dim);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.15s;
-    padding: 0;
-    z-index: 6;
-  }
-  .menu-btn.visible {
-    display: flex;
-  }
-  .menu-btn:hover {
-    background: rgba(11, 11, 14, 0.75);
-    color: var(--text);
-    border-color: rgba(255,255,255,0.2);
-  }
-  .menu-btn:active {
-    transform: scale(0.95);
-  }
-  .menu-btn svg {
-    width: 18px;
-    height: 18px;
-  }
-
-  /* Menu dropdown - positioned relative to image-wrapper */
-  .menu-dropdown {
-    position: absolute;
-    top: 60px;
-    right: 16px;
-    min-width: 160px;
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 6px;
-    box-shadow: var(--shadow);
-    z-index: 100;
-    display: none;
-    animation: popIn 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
-  }
-  .menu-dropdown.open {
-    display: block;
-  }
-  .menu-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    width: 100%;
-    padding: 10px 12px;
-    background: transparent;
-    border: none;
-    border-radius: 6px;
-    color: var(--text);
-    font-size: 14px;
-    font-weight: 500;
-    text-align: left;
-    cursor: pointer;
-    transition: background 0.15s;
-  }
-  .menu-item:hover {
-    background: rgba(255,255,255,0.05);
-  }
-  .menu-item.danger {
-    color: var(--out);
-  }
-  .menu-item.danger:hover {
-    background: var(--out-soft);
-  }
-  .menu-item svg {
-    width: 16px;
-    height: 16px;
-    flex-shrink: 0;
-  }
-
-  .details-panel {
-    position: absolute;
-    top: 75px;
-    right: 0;
-    width: 50%;
-    z-index: 5;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding-right: 16px;
-  }
-
-  .details-panel .field {
-    margin-bottom: 0;
-  }
-
-  .details-panel .field input {
-    width: 100%;
-    padding: 10px 12px;
-    background: rgba(11, 11, 14, 0.75);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 10px;
-    color: var(--text);
-    font-size: 14px;
-    outline: none;
-    transition: border-color 0.15s, background 0.15s;
-  }
-  .details-panel .field input:focus {
-    border-color: var(--accent);
-    background: rgba(11, 11, 14, 0.9);
-  }
-  .details-panel .field input::placeholder {
-    color: var(--text-dim);
-    font-size: 13px;
-  }
-
-  .qty-row {
+  .image-buttons {
     display: flex;
     gap: 8px;
+    margin-top: 8px;
   }
 
-  .qty-row .compact-field {
+  .image-btn {
     flex: 1;
-  }
-
-  .qty-row input {
-    width: 100%;
-    padding: 10px 8px;
-    background: rgba(11, 11, 14, 0.75);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 10px;
-    color: var(--text);
-    font-size: 14px;
-    text-align: center;
-    outline: none;
-    transition: border-color 0.15s, background 0.15s;
-  }
-  .qty-row input:focus {
-    border-color: var(--accent);
-    background: rgba(11, 11, 14, 0.9);
-  }
-  .qty-row input::placeholder {
-    color: var(--text-dim);
-    font-size: 12px;
-  }
-
-  .image-buttons-overlay {
-    position: absolute;
-    bottom: 16px;
-    left: 16px;
-    display: flex;
-    gap: 10px;
-    z-index: 5;
-  }
-
-  .image-btn-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    background: rgba(11, 11, 14, 0.75);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255,255,255,0.1);
-    color: var(--text-dim);
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-dim);
+    font-size: 12px;
+    font-weight: 600;
     cursor: pointer;
     transition: all 0.15s;
-    padding: 0;
   }
-  .image-btn-icon:hover {
+
+  .image-btn:hover {
     background: var(--accent-soft);
     border-color: var(--accent);
     color: var(--accent);
   }
-  .image-btn-icon.delete-btn {
+
+  .image-btn.uploading {
+    opacity: 0.6;
+    cursor: wait;
+  }
+
+  .image-btn.delete-btn {
     color: var(--out);
     border-color: rgba(255,77,94,0.3);
   }
-  .image-btn-icon.delete-btn:hover {
+
+  .image-btn.delete-btn:hover {
     background: var(--out-soft);
     border-color: var(--out);
     color: var(--out);
   }
-  .image-btn-icon.delete-btn:disabled {
+
+  .image-btn.delete-btn:disabled {
     opacity: 0.4;
     cursor: not-allowed;
   }
-  .image-btn-icon.uploading {
-    opacity: 0.6;
-    cursor: wait;
-  }
-  .image-btn-icon svg {
-    width: 20px;
-    height: 20px;
+
+  .image-btn svg {
+    width: 16px;
+    height: 16px;
   }
 
-  /* Stacked action buttons - bottom right of image */
-  .action-buttons-stacked {
-    position: absolute;
-    bottom: 15px;
-    right: 16px;
+  .qty-fields-column {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    z-index: 5;
+    align-items: center;
+    gap: 6px;
   }
 
-  .action-buttons-stacked .btn {
-    width: 130px;
-    padding: 11px 14px;
+  .compact-field {
+    display: flex;
+    flex-direction: column;
+    width: 66%;
+  }
+  .compact-field label {
+    display: block;
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-bottom: 2px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    line-height: 1.2;
+    text-align: center;
+  }
+  .compact-field input {
+    width: 100%;
+    padding: 6px 8px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
     font-size: 14px;
-    flex: none;
+    outline: none;
+    transition: border-color 0.15s;
+    text-align: center;
+  }
+  .compact-field input:focus { border-color: var(--accent); }
+
+  .details-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
   }
 
-  .form-content {
-    display: none;
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 13px; color: var(--text-dim); margin-bottom: 6px; font-weight: 500; }
+  .field input, .field select {
+    width: 100%; padding: 12px 14px; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--text); font-size: 16px;
+    outline: none; transition: border-color 0.15s;
   }
-  /* --- END SHEET LAYOUT STYLES --- */
+  .field input:focus, .field select:focus { border-color: var(--accent); }
 
+  .details-row .field { margin-bottom: 0; }
+
+  .actions { display: flex; gap: 10px; margin-top: 18px; }
   .btn {
     flex: 1; padding: 13px; border-radius: 12px; font-size: 15px; font-weight: 600;
     cursor: pointer; border: 1px solid var(--border); transition: all 0.15s;
@@ -552,7 +345,9 @@
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
   .last-updated { text-align: center; font-size: 11px; color: var(--text-faint); padding: 8px; margin-top: 4px; }
 
-  #imageFileInput { display: none; }
+  #imageFileInput {
+    display: none;
+  }
 
   @keyframes spin {
     from { transform: rotate(0deg); }
@@ -603,96 +398,88 @@
 <!-- Add/Edit Sheet -->
 <div class="overlay" id="overlay">
   <div class="sheet">
-    <div class="sheet-header">
-      <h2>
-        <span id="sheetTitle">Add equipment</span>
-      </h2>
+    <div class="sheet-handle"></div>
+    <h2>
+      <span id="sheetTitle">Add equipment</span>
       <button class="close-btn" id="closeSheet">×</button>
-    </div>
-    
+    </h2>
     <form id="itemForm">
       <input type="hidden" id="itemId" />
-      <input type="hidden" id="itemImageFile" />
-      <input type="file" id="imageFileInput" accept="image/*" />
 
-      <div class="image-wrapper">
-        <div class="image-container" id="imageContainer">
-          <img id="itemImageDisplay" alt="Equipment image" />
-          <div class="image-placeholder" id="imagePlaceholder">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-              <circle cx="8.5" cy="8.5" r="1.5"/>
-              <polyline points="21 15 16 10 5 21"/>
-            </svg>
-            <div>No image</div>
-          </div>
-          <div class="image-fade"></div>
-        </div>
-
-        <div class="name-overlay">
+      <div class="name-field">
+        <div class="field">
+          <label for="itemName">Name</label>
           <input type="text" id="itemName" required placeholder="e.g. Safety gloves" />
         </div>
+      </div>
 
-        <button type="button" class="menu-btn" id="menuBtn" title="More options">
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <circle cx="12" cy="5" r="2"/>
-            <circle cx="12" cy="12" r="2"/>
-            <circle cx="12" cy="19" r="2"/>
-          </svg>
-        </button>
-
-        <div class="menu-dropdown" id="menuDropdown">
-          <button type="button" class="menu-item danger" id="menuDeleteBtn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="3 6 5 6 21 6"/>
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-            </svg>
-            <span>Delete item</span>
-          </button>
-        </div>
-
-        <div class="details-panel">
-          <div class="field">
-            <input type="text" id="itemCategory" placeholder="Category" />
-          </div>
-          <div class="field">
-            <input type="text" id="itemLocation" placeholder="Location" />
-          </div>
-          <div class="qty-row">
-            <div class="compact-field">
-              <input type="number" id="itemQty" min="0" value="0" required placeholder="Qty" />
-            </div>
-            <div class="compact-field">
-              <input type="number" id="itemMin" min="0" value="5" required placeholder="Min" />
-            </div>
-            <div class="compact-field">
-              <input type="text" id="itemUnit" placeholder="Unit" />
+      <div class="image-qty-row">
+        <div class="image-column">
+          <div class="image-container" id="imageContainer">
+            <img id="itemImageDisplay" alt="Equipment image" />
+            <div class="image-placeholder" id="imagePlaceholder">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+              <div>No image</div>
             </div>
           </div>
+          <div class="image-buttons">
+            <button type="button" class="image-btn" id="uploadBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              <span>Upload</span>
+            </button>
+            <button type="button" class="image-btn delete-btn" id="deleteImageBtn" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                <line x1="10" y1="11" x2="10" y2="17"/>
+                <line x1="14" y1="11" x2="14" y2="17"/>
+              </svg>
+              <span>Delete</span>
+            </button>
+          </div>
+          <input type="file" id="imageFileInput" accept="image/*" />
+          <input type="hidden" id="itemImageFile" />
         </div>
 
-        <div class="image-buttons-overlay">
-          <button type="button" class="image-btn-icon" id="uploadBtn" title="Upload image">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="17 8 12 3 7 8"/>
-              <line x1="12" y1="3" x2="12" y2="15"/>
-            </svg>
-          </button>
-          <button type="button" class="image-btn-icon delete-btn" id="deleteImageBtn" disabled title="Delete image">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="3 6 5 6 21 6"/>
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-              <line x1="10" y1="11" x2="10" y2="17"/>
-              <line x1="14" y1="11" x2="14" y2="17"/>
-            </svg>
-          </button>
+        <div class="qty-fields-column">
+          <div class="compact-field">
+            <label for="itemQty">Qty</label>
+            <input type="number" id="itemQty" min="0" value="0" required />
+          </div>
+          <div class="compact-field">
+            <label for="itemMin">Min</label>
+            <input type="number" id="itemMin" min="0" value="5" required />
+          </div>
+          <div class="compact-field">
+            <label for="itemUnit">Unit</label>
+            <input type="text" id="itemUnit" placeholder="pcs" />
+          </div>
         </div>
+      </div>
 
-        <div class="action-buttons-stacked">
-          <button type="submit" class="btn btn-primary" id="saveBtn">Save</button>
-          <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+      <div class="details-row">
+        <div class="field">
+          <label for="itemCategory">Category</label>
+          <input type="text" id="itemCategory" placeholder="PPE, Tools..." />
         </div>
+        <div class="field">
+          <label for="itemLocation">Location</label>
+          <input type="text" id="itemLocation" placeholder="Shelf A3..." />
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn btn-danger" id="deleteBtn" style="display:none">Delete</button>
+        <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="saveBtn">Save</button>
       </div>
     </form>
   </div>
@@ -729,6 +516,7 @@
   let nextRowNumber = 2;
   let searchDebounceTimer = null;
 
+  // Image upload state
   let pendingImageUpload = null;
   let activeImageUploadId = 0;
   let currentLocalImageUrl = null;
@@ -740,13 +528,10 @@
   const categorySelect = $('categorySelect');
   const limitSelect = $('limitSelect');
   const confirmOverlay = $('confirmOverlay');
-  const menuBtn = $('menuBtn');
-  const menuDropdown = $('menuDropdown');
 
   let isModalOpen = false;
   let isConfirmOpen = false;
   let confirmResolver = null;
-  let isMenuOpen = false;
 
   function showConfirm(title, message, okLabel = 'Delete') {
     return new Promise((resolve) => {
@@ -780,7 +565,6 @@
   function closeSheetInternal() {
     overlay.classList.remove('open');
     isModalOpen = false;
-    closeMenu();
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
   }
 
@@ -788,25 +572,6 @@
     if (isModalOpen) {
       if (history.state && history.state.modal) history.back();
       else closeSheetInternal();
-    }
-  }
-
-  function openMenu() {
-    menuDropdown.classList.add('open');
-    isMenuOpen = true;
-  }
-
-  function closeMenu() {
-    menuDropdown.classList.remove('open');
-    isMenuOpen = false;
-  }
-
-  function toggleMenu(e) {
-    e.stopPropagation();
-    if (isMenuOpen) {
-      closeMenu();
-    } else {
-      openMenu();
     }
   }
 
@@ -820,12 +585,6 @@
       const isInput = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT');
       if (isInput) { active.blur(); closeSheetInternal(); }
       else { closeSheetInternal(); }
-    }
-  });
-
-  document.addEventListener('click', (e) => {
-    if (isMenuOpen && !menuDropdown.contains(e.target) && !menuBtn.contains(e.target)) {
-      closeMenu();
     }
   });
 
@@ -883,15 +642,19 @@
         img.onload = () => {
           let width = img.width;
           let height = img.height;
+
           if (width > maxWidth) {
             height = (height * maxWidth) / width;
             width = maxWidth;
           }
+
           const canvas = document.createElement('canvas');
           canvas.width = width;
           canvas.height = height;
           const ctx = canvas.getContext('2d');
+
           ctx.drawImage(img, 0, 0, width, height);
+
           const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
           resolve(compressedDataUrl);
         };
@@ -906,11 +669,13 @@
   async function uploadImageToDrive(file) {
     try {
       const compressedData = await compressImage(file, 481, 0.8);
+
       const result = await postToSheets({
         action: 'uploadImage',
         imageData: compressedData,
         filename: file.name.replace(/\.[^/.]+$/, "") + ".jpg"
       });
+
       return result.url;
     } catch (err) {
       throw err;
@@ -923,6 +688,7 @@
         action: 'deleteImage',
         imageUrl: imageUrl
       });
+
       return result.success;
     } catch (err) {
       console.error('Delete image failed:', err);
@@ -986,6 +752,7 @@
 
   async function deleteItem(item) {
     const originalItems = [...items];
+
     if (item.image && item.image.trim() !== '') {
       try {
         await deleteImageFromDrive(item.image);
@@ -993,6 +760,7 @@
         console.error('Failed to delete image from Drive:', err);
       }
     }
+
     items = items.filter(i => i.id !== item.id);
     saveCache(items);
     render();
@@ -1164,19 +932,10 @@
     if (e.target === confirmOverlay) closeConfirm(false);
   });
 
-  menuBtn.addEventListener('click', toggleMenu);
-
-  $('menuDeleteBtn').addEventListener('click', async () => {
-    closeMenu();
-    const id = $('itemId').value;
-    if (!id || !id.startsWith('row_')) return;
-    const item = items.find(i => i.id === id);
-    const confirmed = await showConfirm('Delete item?', `"${item ? item.name : 'This item'}" will be permanently removed along with its image.`, 'Delete');
-    if (confirmed) { closeSheet(); deleteItem(item); }
-  });
-
   $('deleteImageBtn').addEventListener('click', async () => {
     const imageUrl = $('itemImageFile').value;
+
+    // Invalidate any pending background upload
     activeImageUploadId++;
     pendingImageUpload = null;
 
@@ -1222,10 +981,12 @@
       $('itemImageFile').value = '';
       const img = $('itemImageDisplay');
       const placeholder = $('imagePlaceholder');
+
       img.src = '';
       img.classList.remove('loaded');
       placeholder.style.display = 'block';
 
+      // IMMEDIATELY UPDATE ITEM AND SYNC
       const currentId = $('itemId').value;
       if (currentId && currentId.startsWith('row_')) {
         const item = items.find(i => i.id === currentId);
@@ -1233,9 +994,12 @@
           item.image = '';
           saveCache(items);
           render();
+          postToSheets({ action: 'update', row: item.rowNumber, image: '' })
+            .catch(err => console.error('Sync failed:', err));
           await postToSheets({ action: 'update', row: item.rowNumber, image: '' });
         }
       }
+
       toast('Image deleted');
     } catch (err) {
       console.error('Delete image failed:', err);
@@ -1258,6 +1022,7 @@
     activeImageUploadId++;
     const myUploadId = activeImageUploadId;
 
+    // 1. Immediate local preview
     if (currentLocalImageUrl) {
       URL.revokeObjectURL(currentLocalImageUrl);
     }
@@ -1271,6 +1036,7 @@
     placeholder.style.display = 'none';
     $('deleteImageBtn').disabled = false;
 
+    // 2. Background upload processing
     const uploadBtn = $('uploadBtn');
     const originalText = uploadBtn.innerHTML;
     uploadBtn.classList.add('uploading');
@@ -1294,18 +1060,32 @@
 
         if (myUploadId === activeImageUploadId) {
           $('itemImageFile').value = imageUrl;
+
+          // 3. Keep the temporary local image visible to prevent a blank frame.
+          // The permanent URL will be loaded seamlessly the next time the item view is opened.
           
+          // 4. IMMEDIATELY ASSOCIATE WITH ITEM AND SYNC
           const currentId = $('itemId').value;
           if (currentId && currentId.startsWith('row_')) {
+            // Existing item: update and sync immediately
             const item = items.find(i => i.id === currentId);
             if (item) {
               item.image = imageUrl;
               saveCache(items);
+              render(); // Instantly updates the main list
+              postToSheets({ action: 'update', row: item.rowNumber, image: imageUrl })
+                .then(() => toast('Image saved'))
+                .catch(err => {
+                  console.error('Sync failed:', err);
+                  toast('Image saved locally, sync pending');
+                });
               render();
+              // AWAIT the sheet update to ensure the row exists before proceeding
               await postToSheets({ action: 'update', row: item.rowNumber, image: imageUrl });
               toast('Image saved');
             }
           } else {
+            // New item: auto-save it if it has a name so the image isn't orphaned
             const name = $('itemName').value.trim();
             if (name) {
               const data = {
@@ -1323,9 +1103,17 @@
               saveCache(items);
               render();
 
+              // Update form to reflect it's now a saved item
               $('itemId').value = newItem.id;
-              menuBtn.classList.add('visible');
+              $('deleteBtn').style.display = 'block';
 
+              postToSheets({ action: 'add', ...data })
+                .then(() => toast('New item & image saved'))
+                .catch(err => {
+                  console.error('Sync failed:', err);
+                  toast('Saved locally, sync pending');
+                });
+              // AWAIT the sheet creation to ensure the row exists before proceeding
               await postToSheets({ action: 'add', ...data });
               toast('New item & image saved');
             } else {
@@ -1355,6 +1143,7 @@
     const placeholder = $('imagePlaceholder');
     const deleteBtn = $('deleteImageBtn');
 
+    // Clean up any local URL from previous session
     if (currentLocalImageUrl) {
       URL.revokeObjectURL(currentLocalImageUrl);
       currentLocalImageUrl = null;
@@ -1411,13 +1200,7 @@
     $('itemCategory').value = item ? (item.category || '') : '';
     $('itemLocation').value = item ? (item.location || '') : '';
     $('itemImageFile').value = item ? (item.image || '') : '';
-    
-    if (item) {
-      menuBtn.classList.add('visible');
-    } else {
-      menuBtn.classList.remove('visible');
-    }
-    closeMenu();
+    $('deleteBtn').style.display = item ? 'block' : 'none';
 
     loadImage(item ? item.image : '');
 
@@ -1456,6 +1239,14 @@
     } else {
       addItem(data);
     }
+  });
+
+  $('deleteBtn').addEventListener('click', async () => {
+    const id = $('itemId').value;
+    if (!id || !id.startsWith('row_')) return;
+    const item = items.find(i => i.id === id);
+    const confirmed = await showConfirm('Delete item?', `"${item ? item.name : 'This item'}" will be permanently removed along with its image.`, 'Delete');
+    if (confirmed) { closeSheet(); deleteItem(item); }
   });
 
   let toastTimer;

@@ -527,7 +527,7 @@
 
 <script>
 (() => {
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwGt9pebFDBjoV7avLLpF4g5C4kxjqeKqWhIIMmuGTa-b8bAjQqoMMrkdbbvRaPmXPT2Q/exec';
+  const APPS_SCRIPT_URL = 'hhttps://script.google.com/macros/s/AKfycbzywPvPUZmEX-77C_5uv75UhCrtFbdp4D9ZzHfIMUuP0qOZNmlbSRhrSMVRli3hpZPmbQ/exec';
   const CACHE_KEY = 'equipment_cache_v4';
   const CACHE_MAX_AGE = 24 * 60 * 60 * 1000;
   const SEARCH_DEBOUNCE_MS = 300;
@@ -757,15 +757,24 @@
   }
 
   async function uploadImageToDrive(file) {
-    // Optimized quality settings: 0.85 for thumb (small size, crisp text), 0.90 for HQ
     const thumbData = await compressImage(file, 480, 0.4);
     const hqData = await compressImage(file, 800, 0.6);
+
+    // Generate a unique number (using timestamp to prevent collisions)
+    // We use the last 6 digits of the timestamp to keep it relatively short but unique
+    const uniqueId = Date.now().toString().slice(-6); 
+    
+    // Format names exactly as requested: "item0000" and "thumb_item0000"
+    const hqName = `item${uniqueId}`;
+    const thumbName = `thumb_item${uniqueId}`;
 
     const result = await postToSheets({
       action: 'uploadImage',
       thumbData: thumbData,
       hqData: hqData,
-      filename: file.name.replace(/\.[^/.]+$/, "")
+      filename: hqName, // Kept for backward compatibility
+      hqName: hqName,
+      thumbName: thumbName
     });
 
     if (!result.success) throw new Error(result.message);

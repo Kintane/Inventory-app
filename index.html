@@ -4,383 +4,199 @@
 <meta charset="UTF-8" />
 <meta name="referrer" content="no-referrer" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-<meta name="theme-color" content="#09090b" />
+<meta name="theme-color" content="#0b0b0e" />
 <title>Equipment Tracker</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   :root {
-    --bg: #09090b;
-    --surface: #18181b;
-    --surface-2: #27272a;
-    --border: #27272a;
-    --text: #fafafa;
-    --text-dim: #a1a1aa;
-    --text-faint: #52525b;
-    --accent: #818cf8;
-    --accent-glow: rgba(129, 140, 248, 0.15);
-    --ok: #34d399;
-    --ok-soft: rgba(52, 211, 153, 0.1);
-    --low: #fbbf24;
-    --low-soft: rgba(251, 191, 36, 0.1);
-    --out: #f87171;
-    --out-soft: rgba(248, 113, 113, 0.1);
+    --bg: #0b0b0e; --surface: #16161b; --surface-2: #1f1f26; --border: #2a2a33;
+    --text: #ececf1; --text-dim: #9a9aa6; --text-faint: #6b6b76; --accent: #7c83ff;
+    --accent-soft: rgba(124,131,255,0.15); --ok: #3ddc84; --ok-soft: rgba(61,220,132,0.12);
+    --low: #ffaa33; --low-soft: rgba(255,170,51,0.12); --out: #ff4d5e; --out-soft: rgba(255,77,94,0.14);
+    --shadow: 0 10px 30px rgba(0,0,0,0.4);
   }
-
   html, body {
+    background: var(--bg); color: var(--text);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    font-size: 16px;
-    min-height: 100vh;
-    overscroll-behavior-y: auto;
+    font-size: 16px; min-height: 100vh; overscroll-behavior-y: auto;
   }
-
-  body {
-    background-color: var(--bg);
-    background-image: 
-      radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
-      url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
-    color: var(--text);
-    padding-bottom: 100px;
-  }
-
-  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  @keyframes slideUp { from { opacity: 0; transform: translateY(20px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
-  @keyframes popIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-
-  /* Header */
+  body { padding-bottom: 100px; }
   header {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    background: rgba(9, 9, 11, 0.85);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-bottom: 1px solid var(--border);
-    padding: 16px;
+    position: sticky; top: 0; z-index: 10; background: rgba(11,11,14,0.85);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border); padding: 14px 16px 10px;
   }
   .header-content { max-width: 720px; margin: 0 auto; }
-  .title-row { display: flex; align-items: center; margin-bottom: 16px; }
-  h1 {
-    font-size: 22px;
-    font-weight: 700;
-    letter-spacing: -0.5px;
-    background: linear-gradient(135deg, var(--text) 0%, var(--text-dim) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-
-  /* Search */
-  .search { position: relative; margin-bottom: 12px; }
+  .title-row { display: flex; align-items: center; justify-content: center; margin-bottom: 10px; position: relative; }
+  h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+  .search { position: relative; margin-bottom: 10px; }
   .search input {
-    width: 100%;
-    padding: 12px 16px 12px 42px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    color: var(--text);
-    font-size: 15px;
-    outline: none;
-    transition: all 0.2s;
+    width: 100%; padding: 11px 14px 11px 40px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 12px; color: var(--text);
+    font-size: 16px; outline: none; transition: border-color 0.15s;
   }
-  .search input:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-glow);
-    background: var(--bg);
-  }
+  .search input:focus { border-color: var(--accent); }
   .search svg {
-    position: absolute;
-    left: 14px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 18px;
-    height: 18px;
-    color: var(--text-faint);
-    transition: color 0.2s;
-    pointer-events: none;
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    width: 18px; height: 18px; color: var(--text-faint);
   }
-  .search input:focus ~ svg { color: var(--accent); }
-
-  /* Filters */
-  .filters-row { display: flex; gap: 10px; }
-  .filter-select-wrapper { position: relative; flex: 1; }
+  .filters-row { display: flex; gap: 8px; margin-bottom: 10px; }
+  .filter-select-wrapper { position: relative; flex: 1; min-width: 0; }
   .filter-select-wrapper svg {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 14px;
-    height: 14px;
-    color: var(--text-faint);
-    pointer-events: none;
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    width: 14px; height: 14px; color: var(--text-faint); pointer-events: none;
   }
   .filter-select {
-    width: 100%;
-    padding: 10px 32px 10px 12px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    color: var(--text);
-    font-size: 14px;
-    font-weight: 500;
-    outline: none;
-    cursor: pointer;
-    appearance: none;
-    -webkit-appearance: none;
-    transition: all 0.2s;
+    width: 100%; padding: 10px 34px 10px 12px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 12px; color: var(--text);
+    font-size: 14px; font-weight: 500; outline: none; cursor: pointer;
+    appearance: none; -webkit-appearance: none; -moz-appearance: none; transition: border-color 0.15s;
   }
-  .filter-select:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-glow);
-  }
-  .filter-select option { background: var(--surface); color: var(--text); }
+  .filter-select:focus { border-color: var(--accent); }
+  .filter-select option { background: var(--surface); color: var(--text); padding: 8px; }
   .filter-select.empty { color: var(--text-faint); }
 
-  /* Main List */
-  main { padding: 16px; max-width: 720px; margin: 0 auto; }
+  main { padding: 12px 16px; }
   .item {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--border);
-    border-radius: 12px;
-    padding: 14px 16px;
-    margin-bottom: 10px;
-    cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
-    position: relative;
-    overflow: hidden;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 10px 12px; margin-bottom: 8px; cursor: pointer;
+    transition: transform 0.1s; animation: fadeIn 0.2s ease;
   }
-  .item:hover {
-    transform: translateY(-2px);
-    border-color: var(--text-faint);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-  }
-  .item:active { transform: scale(0.98); }
-  .item.status-out { border-left-color: var(--out); }
-  .item.status-low  { border-left-color: var(--low); }
-  .item.status-ok   { border-left-color: var(--ok); }
-
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  .item:active { transform: scale(0.99); }
+  .item.status-out { border-color: rgba(255,77,94,0.35); background: linear-gradient(180deg, var(--out-soft), var(--surface)); }
+  .item.status-low  { border-color: rgba(255,170,51,0.3);  background: linear-gradient(180deg, var(--low-soft), var(--surface)); }
   .item-name {
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--text);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 6px;
+    font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;
   }
-  .item-name-text {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
+  .item-name-text { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .item-meta {
-    font-size: 13px;
-    color: var(--text-dim);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
+    font-size: 13px; color: var(--text-dim); white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px;
   }
   .item-meta .sep { color: var(--text-faint); }
-  .item-meta .qty {
-    font-weight: 600;
-    font-size: 12px;
-    padding: 2px 8px;
-    border-radius: 6px;
-    letter-spacing: 0.3px;
-  }
+  .item-meta .qty { font-weight: 600; padding: 1px 6px; border-radius: 6px; }
   .item-meta .qty.out { color: var(--out); background: var(--out-soft); }
   .item-meta .qty.low { color: var(--low); background: var(--low-soft); }
   .item-meta .qty.ok  { color: var(--ok);  background: var(--ok-soft); }
-
   .badge {
-    font-size: 10px;
-    font-weight: 700;
-    padding: 3px 8px;
-    border-radius: 6px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    flex-shrink: 0;
+    display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 7px;
+    border-radius: 999px; vertical-align: middle; text-transform: uppercase;
+    letter-spacing: 0.5px; flex-shrink: 0;
   }
   .badge.out { background: var(--out-soft); color: var(--out); }
   .badge.low { background: var(--low-soft); color: var(--low); }
   .badge.ok  { background: var(--ok-soft);  color: var(--ok); }
 
-  /* Load More */
   .load-more {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    width: 100%;
-    padding: 14px;
-    margin: 16px 0 8px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    color: var(--text-dim);
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; padding: 14px; margin: 12px 0 8px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 14px; color: var(--text-dim);
+    font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.15s; animation: fadeIn 0.25s ease;
   }
-  .load-more:hover {
-    background: var(--surface-2);
-    color: var(--text);
-    border-color: var(--accent);
-  }
+  .load-more:hover { background: var(--surface-2); color: var(--text); border-color: var(--accent); }
   .load-more:active { transform: scale(0.98); }
   .load-more svg { width: 16px; height: 16px; }
   .load-more-count { color: var(--text-faint); font-weight: 500; font-size: 13px; }
 
-  /* Empty State */
-  .empty { text-align: center; padding: 80px 20px; color: var(--text-dim); }
-  .empty svg { width: 64px; height: 64px; margin-bottom: 16px; opacity: 0.3; color: var(--text-faint); }
-  .empty h3 { font-size: 18px; font-weight: 600; margin-bottom: 8px; color: var(--text); }
-  .empty p { font-size: 14px; line-height: 1.5; }
-  .last-updated { text-align: center; font-size: 12px; color: var(--text-faint); padding: 16px; margin-top: 8px; }
+  .empty { text-align: center; padding: 60px 20px; color: var(--text-dim); }
+  .empty svg { width: 56px; height: 56px; margin-bottom: 14px; opacity: 0.4; }
+  .empty h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+  .empty p { font-size: 14px; }
 
-  /* FAB */
   .fab {
-    position: fixed;
-    bottom: 28px;
-    right: 28px;
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    background: var(--accent);
-    color: white;
-    border: none;
-    cursor: pointer;
-    box-shadow: 0 8px 32px rgba(99, 102, 241, 0.4), 0 0 0 1px rgba(255,255,255,0.1);
-    display: grid;
-    place-items: center;
-    transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-    z-index: 20;
+    position: fixed; bottom: 22px; right: 22px; width: 58px; height: 58px; border-radius: 18px;
+    background: var(--accent); color: white; border: none; cursor: pointer;
+    box-shadow: var(--shadow), 0 0 0 1px rgba(124,131,255,0.3);
+    display: grid; place-items: center; transition: transform 0.15s; z-index: 20;
   }
-  .fab:hover {
-    transform: translateY(-4px) scale(1.05);
-    box-shadow: 0 12px 40px rgba(99, 102, 241, 0.5), 0 0 0 1px rgba(255,255,255,0.2);
-  }
-  .fab:active { transform: scale(0.95); }
-  .fab svg { width: 24px; height: 24px; }
+  .fab:active { transform: scale(0.94); }
+  .fab svg { width: 26px; height: 26px; }
 
-  /* Overlay & Sheet */
   .overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.6);
-    z-index: 50;
-    display: none;
-    justify-content: center;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 50;
+    display: none; justify-content: center; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
   }
-  .overlay.open { display: flex; animation: fadeIn 0.2s ease; }
-  
+  .overlay.open { display: flex; animation: fadeIn 0.2s; }
+
+  .confirm-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 60;
+    display: none; justify-content: center; align-items: center;
+    backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+  }
+  .confirm-overlay.open { display: flex; animation: fadeIn 0.15s; }
+  .confirm-dialog {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    padding: 22px; width: 90%; max-width: 380px; box-shadow: var(--shadow);
+    animation: popIn 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  @keyframes popIn { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
+  .confirm-dialog h3 { font-size: 17px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
+  .confirm-dialog p { font-size: 14px; color: var(--text-dim); margin-bottom: 20px; line-height: 1.5; }
+  .confirm-dialog .actions { display: flex; gap: 10px; margin-top: 0; }
+
   .sheet {
     width: 100%;
-    max-width: 600px;
-    background: var(--surface);
+    max-width: 640px;
+    background: rgba(22, 22, 27, 0.82);
     border: 1px solid var(--border);
     border-radius: 20px;
-    padding: 24px;
-    max-height: 90vh;
+    padding: 22px;
+    max-height: 92vh;
     overflow-y: auto;
-    animation: slideUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-    box-shadow: 0 24px 64px rgba(0,0,0,0.4);
+    animation: popIn 0.25s cubic-bezier(0.2,0.8,0.2,1);
   }
+
   @media (max-width: 639px) {
-    .overlay.open { align-items: flex-end; }
+    .overlay.open { align-items: flex-start; }
     .sheet {
-      max-height: 95vh;
-      border-radius: 20px 20px 0 0;
-      padding: 20px;
+      height: 100vh;
+      height: 100dvh;
+      max-height: 100vh;
+      max-height: 100dvh;
+      border-radius: 0;
+      padding: 18px;
+      padding-top: calc(18px + env(safe-area-inset-top, 0px));
       padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-y: contain;
+      background: rgba(22, 22, 27, 0.22);
+      backdrop-filter: blur(20px) saturate(1.4);
+      -webkit-backdrop-filter: blur(24px) saturate(1.4);
     }
   }
-  @media (min-width: 640px) { .overlay.open { align-items: center; } }
 
-  .sheet-handle {
-    width: 40px;
-    height: 4px;
-    background: var(--border);
-    border-radius: 2px;
-    margin: 0 auto 20px;
+  @media (min-width: 640px) {
+    .overlay.open { align-items: center; }
   }
-  @media (min-width: 640px) { .sheet-handle { display: none; } }
 
+  .sheet-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 14px; }
   .sheet h2 {
-    font-size: 20px;
-    font-weight: 700;
-    margin-bottom: 24px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    color: var(--text);
+    font-size: 18px; font-weight: 700; margin-bottom: 16px;
+    display: flex; justify-content: space-between; align-items: center;
   }
-  .close-btn {
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    font-size: 20px;
-    cursor: pointer;
-    display: grid;
-    place-items: center;
-    transition: all 0.2s;
-  }
-  .close-btn:hover { background: var(--border); color: var(--text); }
+  .close-btn { background: none; border: none; color: var(--text-dim); font-size: 24px; cursor: pointer; padding: 4px 8px; }
 
-  /* Form Fields */
-  .field { margin-bottom: 16px; }
-  .field label {
-    display: block;
-    font-size: 13px;
-    color: var(--text-dim);
-    margin-bottom: 6px;
-    font-weight: 500;
-  }
-  .field input, .field select {
-    width: 100%;
-    padding: 12px 14px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    color: var(--text);
-    font-size: 15px;
-    outline: none;
-    transition: all 0.2s;
-  }
-  .field input:focus, .field select:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-glow);
-    background: var(--surface);
-  }
-  .details-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-  }
+  .name-field { margin-bottom: 14px; }
 
-  /* Image & Qty Layout */
   .image-qty-row {
     display: grid;
-    grid-template-columns: 1fr;
-    gap: 16px;
-    margin-bottom: 16px;
+    grid-template-columns: 2fr 1fr;
+    gap: 12px;
+    margin-bottom: 14px;
+    align-items: start;
   }
-  @media (min-width: 640px) {
-    .image-qty-row { grid-template-columns: 2fr 1fr; }
+
+  .image-column {
+    display: flex;
+    flex-direction: column;
   }
 
   .image-container {
     width: 100%;
     aspect-ratio: 16/9;
-    background: var(--bg);
+    background: var(--surface-2);
     border: 2px dashed var(--border);
     border-radius: 12px;
     display: flex;
@@ -388,180 +204,179 @@
     justify-content: center;
     overflow: hidden;
     position: relative;
-    transition: all 0.2s;
   }
-  .image-container:hover { border-color: var(--accent); background: var(--accent-glow); }
-  .image-container img { width: 100%; height: 100%; object-fit: cover; display: none; }
+  .image-container img { 
+    width: 100%; 
+    height: 100%; 
+    object-fit: cover; 
+    display: none;
+  }
   .image-container img.loaded { display: block; }
-  
-  .image-placeholder {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    color: var(--text-faint);
-    font-size: 13px;
-    pointer-events: none;
-  }
-  .image-placeholder svg { width: 40px; height: 40px; opacity: 0.5; }
+  .image-placeholder { color: var(--text-faint); font-size: 13px; text-align: center; padding: 20px; }
+  .image-placeholder svg { width: 48px; height: 48px; margin-bottom: 8px; opacity: 0.5; }
 
-  .image-buttons { display: flex; gap: 8px; margin-top: 10px; }
+  .image-buttons {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
   .image-btn {
     flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 6px;
-    padding: 10px;
+    padding: 8px 12px;
     background: var(--surface-2);
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: 8px;
     color: var(--text-dim);
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.15s;
   }
-  .image-btn:hover { background: var(--surface); border-color: var(--text-faint); color: var(--text); }
-  .image-btn.delete-btn { color: var(--out); border-color: rgba(248, 113, 113, 0.2); }
-  .image-btn.delete-btn:hover { background: var(--out-soft); border-color: var(--out); }
-  .image-btn.delete-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-  .image-btn svg { width: 16px; height: 16px; }
-  .image-btn.uploading { opacity: 0.7; cursor: wait; }
+
+  .image-btn:hover {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .image-btn.uploading {
+    opacity: 0.6;
+    cursor: wait;
+  }
+
+  .image-btn.delete-btn {
+    color: var(--out);
+    border-color: rgba(255,77,94,0.3);
+  }
+
+  .image-btn.delete-btn:hover {
+    background: var(--out-soft);
+    border-color: var(--out);
+    color: var(--out);
+  }
+
+  .image-btn.delete-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .image-btn svg {
+    width: 16px;
+    height: 16px;
+  }
 
   .qty-fields-column {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1.2fr;
-    gap: 8px;
-    background: var(--surface);
-    padding: 12px;
-    border-radius: 12px;
-    border: 1px solid var(--border);
-    align-items: flex-end;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
   }
-  @media (min-width: 640px) {
-    .qty-fields-column { grid-template-columns: 1fr; gap: 12px; }
+
+  .compact-field {
+    display: flex;
+    flex-direction: column;
+    width: 66%;
   }
-  .compact-field { display: flex; flex-direction: column; }
   .compact-field label {
+    display: block;
     font-size: 10px;
     color: var(--text-dim);
-    margin-bottom: 4px;
+    margin-bottom: 2px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    line-height: 1.2;
     text-align: center;
   }
   .compact-field input {
     width: 100%;
-    padding: 8px;
+    padding: 6px 8px;
     background: var(--bg);
     border: 1px solid var(--border);
     border-radius: 8px;
     color: var(--text);
     font-size: 14px;
-    text-align: center;
     outline: none;
-    transition: all 0.2s;
+    transition: border-color 0.15s;
+    text-align: center;
   }
-  .compact-field input:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 2px var(--accent-glow);
+  .compact-field input:focus { border-color: var(--accent); }
+
+  .details-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
   }
 
-  /* Actions & Buttons */
-  .actions { display: flex; gap: 10px; margin-top: 24px; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 13px; color: var(--text-dim); margin-bottom: 6px; font-weight: 500; }
+  .field input, .field select {
+    width: 100%; padding: 12px 14px; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--text); font-size: 16px;
+    outline: none; transition: border-color 0.15s;
+  }
+  .field input:focus, .field select:focus { border-color: var(--accent); }
+
+  .details-row .field { margin-bottom: 0; }
+
+  .actions { display: flex; gap: 10px; margin-top: 18px; }
   .btn {
-    flex: 1;
-    padding: 14px;
-    border-radius: 10px;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    border: 1px solid transparent;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
+    flex: 1; padding: 13px; border-radius: 12px; font-size: 15px; font-weight: 600;
+    cursor: pointer; border: 1px solid var(--border); transition: all 0.15s;
   }
-  .btn-primary {
-    background: var(--accent);
-    color: white;
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-  }
-  .btn-primary:hover { transform: translateY(-1px); filter: brightness(1.1); }
-  .btn-primary:active { transform: translateY(0); }
-  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-  
-  .btn-secondary {
-    background: var(--surface-2);
-    color: var(--text);
-    border-color: var(--border);
-  }
-  .btn-secondary:hover { background: var(--border); }
-  
-  .btn-danger {
-    background: var(--out-soft);
-    color: var(--out);
-    border-color: rgba(248, 113, 113, 0.3);
-  }
-  .btn-danger:hover { background: rgba(248, 113, 113, 0.2); border-color: var(--out); }
+  .btn-primary { background: var(--accent); color: white; border-color: var(--accent); }
+  .btn-primary:active { opacity: 0.85; }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-secondary { background: var(--surface-2); color: var(--text); }
+  .btn-danger { background: var(--out-soft); color: var(--out); border-color: rgba(255,77,94,0.3); }
 
-  /* Confirm Dialog */
-  .confirm-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.7);
-    z-index: 60;
-    display: none;
-    justify-content: center;
-    align-items: center;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-  }
-  .confirm-overlay.open { display: flex; animation: fadeIn 0.15s ease; }
-  .confirm-dialog {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 24px;
-    width: 90%;
-    max-width: 360px;
-    box-shadow: 0 24px 64px rgba(0,0,0,0.5);
-    animation: popIn 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
-  }
-  .confirm-dialog h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
-  .confirm-dialog p { font-size: 14px; color: var(--text-dim); margin-bottom: 24px; line-height: 1.5; }
-  .confirm-dialog .actions { margin-top: 0; }
-
-  /* Toast */
   .toast {
-    position: fixed;
-    bottom: 32px;
-    left: 50%;
-    transform: translateX(-50%) translateY(20px);
-    background: rgba(39, 39, 42, 0.9);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    color: var(--text);
-    padding: 12px 20px;
-    border-radius: 99px;
-    border: 1px solid var(--border);
-    font-size: 14px;
-    font-weight: 500;
-    z-index: 100;
-    opacity: 0;
-    pointer-events: none;
-    transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+    background: var(--surface-2); color: var(--text); padding: 10px 18px;
+    border-radius: 999px; border: 1px solid var(--border); font-size: 14px;
+    z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s;
   }
-  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+  .last-updated { text-align: center; font-size: 11px; color: var(--text-faint); padding: 8px; margin-top: 4px; }
 
   #imageFileInput { display: none; }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  /* Lightbox Styles */
+  .lightbox {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 200;
+    display: none; justify-content: center; align-items: center;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    animation: fadeIn 0.2s;
+  }
+  .lightbox.open { display: flex; }
+  .lightbox-img {
+    max-width: 92vw; max-height: 92vh; border-radius: 8px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.6); object-fit: contain;
+    cursor: zoom-out;
+  }
+  .lightbox-close {
+    position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2); color: white; width: 44px; height: 44px; border-radius: 50%;
+    font-size: 28px; cursor: pointer; display: grid; place-items: center;
+    transition: background 0.15s; line-height: 1;
+  }
+  .lightbox-close:hover { background: rgba(255,255,255,0.25); }
+
+  @media (min-width: 640px) {
+    main { max-width: 720px; margin: 0 auto; padding: 16px 24px; }
+    header { padding: 16px 24px 12px; }
+  }
 </style>
 </head>
 <body>
@@ -605,14 +420,16 @@
     <div class="sheet-handle"></div>
     <h2>
       <span id="sheetTitle">Add equipment</span>
-      <button class="close-btn" id="closeSheet" aria-label="Close">×</button>
+      <button class="close-btn" id="closeSheet">×</button>
     </h2>
     <form id="itemForm">
       <input type="hidden" id="itemId" />
 
-      <div class="field">
-        <label for="itemName">Name</label>
-        <input type="text" id="itemName" required placeholder="e.g. Safety gloves" />
+      <div class="name-field">
+        <div class="field">
+          <label for="itemName">Name</label>
+          <input type="text" id="itemName" required placeholder="e.g. Safety gloves" />
+        </div>
       </div>
 
       <div class="image-qty-row">
@@ -625,7 +442,7 @@
                 <circle cx="8.5" cy="8.5" r="1.5"/>
                 <polyline points="21 15 16 10 5 21"/>
               </svg>
-              <span>No image</span>
+              <div>No image</div>
             </div>
           </div>
           <div class="image-buttons">
@@ -679,10 +496,7 @@
       </div>
 
       <div class="actions">
-        <button type="button" class="btn btn-danger" id="deleteBtn" style="display:none">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-          Delete
-        </button>
+        <button type="button" class="btn btn-danger" id="deleteBtn" style="display:none">Delete</button>
         <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
         <button type="submit" class="btn btn-primary" id="saveBtn">Save</button>
       </div>
@@ -702,12 +516,18 @@
   </div>
 </div>
 
+<!-- Lightbox for High Quality Images -->
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" id="lightboxClose">×</button>
+  <img class="lightbox-img" id="lightboxImg" alt="High quality equipment image" />
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
 (() => {
   const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxv8wsAQDDdYHPh2xoodc90Brt7gFW3J-lg5_ma_krKeKQMI-G5X2_u-b2QVeaj_EQWuw/exec';
-  const CACHE_KEY = 'equipment_cache_v2';
+  const CACHE_KEY = 'equipment_cache_v3'; // Bumped version for new JSON image format
   const CACHE_MAX_AGE = 24 * 60 * 60 * 1000;
   const SEARCH_DEBOUNCE_MS = 300;
   const DEFAULT_LIMIT = 20;
@@ -721,9 +541,16 @@
   let nextRowNumber = 2;
   let searchDebounceTimer = null;
 
+  // Image upload state
   let pendingImageUpload = null;
   let activeImageUploadId = 0;
   let currentLocalImageUrl = null;
+
+  // Modal states
+  let isModalOpen = false;
+  let isConfirmOpen = false;
+  let isLightboxOpen = false;
+  let confirmResolver = null;
 
   const $ = id => document.getElementById(id);
   const listEl = $('list');
@@ -732,10 +559,6 @@
   const categorySelect = $('categorySelect');
   const limitSelect = $('limitSelect');
   const confirmOverlay = $('confirmOverlay');
-
-  let isModalOpen = false;
-  let isConfirmOpen = false;
-  let confirmResolver = null;
 
   function showConfirm(title, message, okLabel = 'Delete') {
     return new Promise((resolve) => {
@@ -779,11 +602,31 @@
     }
   }
 
-  window.addEventListener('popstate', (e) => {
-    if (isConfirmOpen) { 
-      closeConfirmInternal(false); 
-      return; 
+  function openLightbox(url) {
+    $('lightboxImg').src = url;
+    $('lightbox').classList.add('open');
+    isLightboxOpen = true;
+    history.pushState({ lightbox: true }, '');
+  }
+
+  function closeLightboxInternal() {
+    $('lightbox').classList.remove('open');
+    $('lightboxImg').src = '';
+    isLightboxOpen = false;
+  }
+
+  function closeLightbox() {
+    if (!isLightboxOpen) return;
+    if (history.state && history.state.lightbox) {
+      history.back();
+    } else {
+      closeLightboxInternal();
     }
+  }
+
+  window.addEventListener('popstate', (e) => {
+    if (isConfirmOpen) { closeConfirmInternal(false); return; }
+    if (isLightboxOpen) { closeLightboxInternal(); return; }
     if (isModalOpen) {
       const active = document.activeElement;
       const isInput = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT');
@@ -855,8 +698,7 @@
           canvas.height = height;
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, width, height);
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
-          resolve(compressedDataUrl);
+          resolve(canvas.toDataURL('image/jpeg', quality));
         };
         img.onerror = () => reject(new Error('Failed to load image'));
         img.src = e.target.result;
@@ -867,25 +709,62 @@
   }
 
   async function uploadImageToDrive(file) {
+    // Generate both thumbnail and high-quality versions
+    const thumbData = await compressImage(file, 480, 0.8);
+    const hqData = await compressImage(file, 1920, 0.9);
+
+    const result = await postToSheets({
+      action: 'uploadImage',
+      thumbData: thumbData,
+      hqData: hqData,
+      filename: file.name.replace(/\.[^/.]+$/, "")
+    });
+
+    if (!result.success) throw new Error(result.message);
+    return { thumb: result.thumbUrl, hq: result.hqUrl };
+  }
+
+  function getImageUrls(imageStr) {
+    if (!imageStr) return { thumb: '', hq: '' };
     try {
-      const compressedData = await compressImage(file, 481, 0.8);
-      const result = await postToSheets({
-        action: 'uploadImage',
-        imageData: compressedData,
-        filename: file.name.replace(/\.[^/.]+$/, "") + ".jpg"
-      });
-      return result.url;
-    } catch (err) {
-      throw err;
+      const parsed = JSON.parse(imageStr);
+      return { 
+        thumb: parsed.thumb || '', 
+        hq: parsed.hq || parsed.thumb || '' 
+      };
+    } catch (e) {
+      // Legacy string format fallback
+      return { thumb: imageStr, hq: imageStr };
     }
   }
 
-  async function deleteImageFromDrive(imageUrl) {
+  function getOptimizedDriveUrl(url, size = 'w1000') {
+    if (!url) return '';
+    let finalUrl = url.trim();
+    let fileId = null;
+    const thumbnailMatch = finalUrl.match(/[?&]id=([^&]+)/);
+    if (thumbnailMatch) fileId = thumbnailMatch[1];
+    const ucMatch = finalUrl.match(/\/d\/([^\/\?]+)/);
+    if (ucMatch) fileId = ucMatch[1];
+    const lhMatch = finalUrl.match(/lh3\.googleusercontent\.com\/d\/([^\/\?=]+)/);
+    if (lhMatch) fileId = lhMatch[1];
+    
+    if (fileId) {
+      return `https://lh3.googleusercontent.com/d/${fileId}=${size}`;
+    }
+    return finalUrl;
+  }
+
+  async function deleteImageFromDrive(imageStr) {
+    const urls = getImageUrls(imageStr);
+    const payload = { action: 'deleteImage' };
+    if (urls.thumb) payload.thumbUrl = urls.thumb;
+    if (urls.hq && urls.hq !== urls.thumb) payload.hqUrl = urls.hq; // Deduplicate
+    
+    if (!payload.thumbUrl && !payload.hqUrl) return true;
+
     try {
-      const result = await postToSheets({
-        action: 'deleteImage',
-        imageUrl: imageUrl
-      });
+      const result = await postToSheets(payload);
       return result.success;
     } catch (err) {
       console.error('Delete image failed:', err);
@@ -949,16 +828,22 @@
 
   async function deleteItem(item) {
     const originalItems = [...items];
+
     if (item.image && item.image.trim() !== '') {
-      try { await deleteImageFromDrive(item.image); } 
-      catch (err) { console.error('Failed to delete image from Drive:', err); }
+      try {
+        await deleteImageFromDrive(item.image);
+      } catch (err) {
+        console.error('Failed to delete image from Drive:', err);
+      }
     }
+
     items = items.filter(i => i.id !== item.id);
     saveCache(items);
     render();
     toast('Deleted');
-    try { await postToSheets({ action: 'delete', row: item.rowNumber }); } 
-    catch (err) {
+    try { 
+      await postToSheets({ action: 'delete', row: item.rowNumber }); 
+    } catch (err) {
       console.error('Sync failed:', err);
       items = originalItems;
       saveCache(items);
@@ -1113,7 +998,9 @@
   $('cancelBtn').addEventListener('click', closeSheet);
   overlay.addEventListener('click', e => { if (e.target === overlay) closeSheet(); });
 
-  $('uploadBtn').addEventListener('click', () => { $('imageFileInput').click(); });
+  $('uploadBtn').addEventListener('click', () => {
+    $('imageFileInput').click();
+  });
 
   $('confirmCancel').addEventListener('click', () => closeConfirm(false));
   $('confirmOk').addEventListener('click', () => closeConfirm(true));
@@ -1122,7 +1009,8 @@
   });
 
   $('deleteImageBtn').addEventListener('click', async () => {
-    const imageUrl = $('itemImageFile').value;
+    const imageStr = $('itemImageFile').value;
+
     activeImageUploadId++;
     pendingImageUpload = null;
 
@@ -1131,17 +1019,23 @@
       currentLocalImageUrl = null;
     }
 
-    if (!imageUrl || imageUrl.trim() === '') {
+    const urls = getImageUrls(imageStr);
+    if (!urls.thumb && !urls.hq) {
       const img = $('itemImageDisplay');
       const placeholder = $('imagePlaceholder');
+      const imageContainer = $('imageContainer');
       img.src = '';
       img.classList.remove('loaded');
-      placeholder.style.display = 'flex';
+      img.style.cursor = 'default';
+      img.onclick = null;
+      imageContainer.style.cursor = 'default';
+      imageContainer.onclick = null;
+      placeholder.style.display = 'block';
       $('deleteImageBtn').disabled = true;
       return;
     }
 
-    const confirmed = await showConfirm('Delete image?', 'This will delete the image from Google Drive and remove it from this item.', 'Delete Image');
+    const confirmed = await showConfirm('Delete image?', 'This will delete the image(s) from Google Drive and remove them from this item.', 'Delete Image');
     if (!confirmed) return;
 
     const deleteBtn = $('deleteImageBtn');
@@ -1150,7 +1044,7 @@
     try {
       deleteBtn.disabled = true;
       deleteBtn.innerHTML = `
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation: spin 1s linear infinite; width:16px; height:16px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation: spin 1s linear infinite">
           <line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/>
           <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
           <line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/>
@@ -1159,14 +1053,20 @@
         <span>Deleting...</span>
       `;
 
-      await deleteImageFromDrive(imageUrl);
+      await deleteImageFromDrive(imageStr);
 
       $('itemImageFile').value = '';
       const img = $('itemImageDisplay');
       const placeholder = $('imagePlaceholder');
+      const imageContainer = $('imageContainer');
+
       img.src = '';
       img.classList.remove('loaded');
-      placeholder.style.display = 'flex';
+      img.style.cursor = 'default';
+      img.onclick = null;
+      imageContainer.style.cursor = 'default';
+      imageContainer.onclick = null;
+      placeholder.style.display = 'block';
 
       const currentId = $('itemId').value;
       if (currentId && currentId.startsWith('row_')) {
@@ -1191,16 +1091,23 @@
   $('imageFileInput').addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (!file.type.startsWith('image/')) { toast('Please select an image file'); return; }
+
+    if (!file.type.startsWith('image/')) {
+      toast('Please select an image file');
+      return;
+    }
 
     activeImageUploadId++;
     const myUploadId = activeImageUploadId;
 
-    if (currentLocalImageUrl) URL.revokeObjectURL(currentLocalImageUrl);
+    if (currentLocalImageUrl) {
+      URL.revokeObjectURL(currentLocalImageUrl);
+    }
     currentLocalImageUrl = URL.createObjectURL(file);
 
     const img = $('itemImageDisplay');
     const placeholder = $('imagePlaceholder');
+
     img.src = currentLocalImageUrl;
     img.classList.add('loaded');
     placeholder.style.display = 'none';
@@ -1210,7 +1117,7 @@
     const originalText = uploadBtn.innerHTML;
     uploadBtn.classList.add('uploading');
     uploadBtn.innerHTML = `
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation: spin 1s linear infinite; width:16px; height:16px;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation: spin 1s linear infinite">
         <line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/>
         <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
         <line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/>
@@ -1221,18 +1128,19 @@
 
     pendingImageUpload = (async () => {
       try {
-        const imageUrl = await uploadImageToDrive(file);
+        const imageUrls = await uploadImageToDrive(file);
+
         if (myUploadId === activeImageUploadId) {
-          $('itemImageFile').value = imageUrl;
+          $('itemImageFile').value = JSON.stringify(imageUrls);
+
           const currentId = $('itemId').value;
-          
           if (currentId && currentId.startsWith('row_')) {
             const item = items.find(i => i.id === currentId);
             if (item) {
-              item.image = imageUrl;
+              item.image = JSON.stringify(imageUrls);
               saveCache(items);
               render();
-              await postToSheets({ action: 'update', row: item.rowNumber, image: imageUrl });
+              await postToSheets({ action: 'update', row: item.rowNumber, image: JSON.stringify(imageUrls) });
               toast('Image saved');
             }
           } else {
@@ -1245,15 +1153,17 @@
                 unit: $('itemUnit').value.trim(),
                 category: $('itemCategory').value.trim(),
                 location: $('itemLocation').value.trim(),
-                image: imageUrl
+                image: JSON.stringify(imageUrls)
               };
               const newItem = { id: 'row_' + nextRowNumber, rowNumber: nextRowNumber, ...data };
               items.push(newItem);
               nextRowNumber++;
               saveCache(items);
               render();
+
               $('itemId').value = newItem.id;
-              $('deleteBtn').style.display = 'flex';
+              $('deleteBtn').style.display = 'block';
+
               await postToSheets({ action: 'add', ...data });
               toast('New item & image saved');
             } else {
@@ -1263,7 +1173,9 @@
         }
       } catch (err) {
         console.error('Background upload failed:', err);
-        if (myUploadId === activeImageUploadId) toast('Upload failed: ' + err.message);
+        if (myUploadId === activeImageUploadId) {
+          toast('Upload failed: ' + err.message);
+        }
       } finally {
         if (myUploadId === activeImageUploadId) {
           uploadBtn.classList.remove('uploading');
@@ -1272,13 +1184,15 @@
         }
       }
     })();
+
     $('imageFileInput').value = '';
   });
 
-  function loadImage(imageUrl) {
+  function loadImage(imageStr) {
     const img = $('itemImageDisplay');
     const placeholder = $('imagePlaceholder');
     const deleteBtn = $('deleteImageBtn');
+    const imageContainer = $('imageContainer');
 
     if (currentLocalImageUrl) {
       URL.revokeObjectURL(currentLocalImageUrl);
@@ -1287,33 +1201,42 @@
 
     img.src = '';
     img.classList.remove('loaded');
-    placeholder.style.display = 'flex';
+    img.style.cursor = 'default';
+    img.onclick = null;
+    imageContainer.style.cursor = 'default';
+    imageContainer.onclick = null;
+    placeholder.style.display = 'block';
 
-    if (!imageUrl || imageUrl.trim() === '') {
+    const urls = getImageUrls(imageStr);
+    if (!urls.thumb && !urls.hq) {
       deleteBtn.disabled = true;
       return;
     }
 
     deleteBtn.disabled = false;
-    let finalUrl = imageUrl.trim();
-    let fileId = null;
 
-    const thumbnailMatch = finalUrl.match(/[?&]id=([^&]+)/);
-    if (thumbnailMatch) fileId = thumbnailMatch[1];
-    const ucMatch = finalUrl.match(/\/d\/([^\/\?]+)/);
-    if (ucMatch) fileId = ucMatch[1];
-    const lhMatch = finalUrl.match(/lh3\.googleusercontent\.com\/d\/([^\/\?=]+)/);
-    if (lhMatch) fileId = lhMatch[1];
+    const thumbDisplayUrl = getOptimizedDriveUrl(urls.thumb, 'w480');
+    const hqDisplayUrl = getOptimizedDriveUrl(urls.hq, 'w1920');
 
-    if (fileId) finalUrl = 'https://lh3.googleusercontent.com/d/' + fileId + '=w1000';
-
-    img.src = finalUrl;
-    img.onload = () => { img.classList.add('loaded'); placeholder.style.display = 'none'; };
-    img.onerror = () => {
-      console.error('Failed to load image:', finalUrl);
-      img.classList.remove('loaded');
-      placeholder.style.display = 'flex';
+    img.src = thumbDisplayUrl;
+    img.onload = () => {
+      img.classList.add('loaded');
+      placeholder.style.display = 'none';
     };
+    img.onerror = () => {
+      console.error('Failed to load thumbnail:', thumbDisplayUrl);
+      img.classList.remove('loaded');
+      placeholder.style.display = 'block';
+    };
+
+    if (hqDisplayUrl) {
+      img.style.cursor = 'zoom-in';
+      img.onclick = () => openLightbox(hqDisplayUrl);
+      imageContainer.style.cursor = 'zoom-in';
+      imageContainer.onclick = (e) => {
+        if (e.target !== img) openLightbox(hqDisplayUrl);
+      };
+    }
   }
 
   function openEdit(item) {
@@ -1326,9 +1249,10 @@
     $('itemCategory').value = item ? (item.category || '') : '';
     $('itemLocation').value = item ? (item.location || '') : '';
     $('itemImageFile').value = item ? (item.image || '') : '';
-    $('deleteBtn').style.display = item ? 'flex' : 'none';
+    $('deleteBtn').style.display = item ? 'block' : 'none';
 
     loadImage(item ? item.image : '');
+
     sheet.scrollTop = 0;
     history.pushState({ modal: true }, '');
     isModalOpen = true;
@@ -1338,6 +1262,7 @@
 
   $('itemForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+
     if (pendingImageUpload) {
       toast('Finishing image upload...');
       await pendingImageUpload;
@@ -1369,8 +1294,13 @@
     const id = $('itemId').value;
     if (!id || !id.startsWith('row_')) return;
     const item = items.find(i => i.id === id);
-    const confirmed = await showConfirm('Delete item?', `"${item ? item.name : 'This item'}" will be permanently removed along with its image.`, 'Delete');
+    const confirmed = await showConfirm('Delete item?', `"${item ? item.name : 'This item'}" will be permanently removed along with its images.`, 'Delete');
     if (confirmed) { closeSheet(); deleteItem(item); }
+  });
+
+  $('lightboxClose').addEventListener('click', closeLightbox);
+  $('lightbox').addEventListener('click', e => {
+    if (e.target === $('lightbox')) closeLightbox();
   });
 
   let toastTimer;
@@ -1379,7 +1309,7 @@
     t.textContent = msg;
     t.classList.add('show');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2000);
   }
 
   function init() {

@@ -699,6 +699,7 @@
           targetWidth = maxWidth;
         }
 
+        // Try createImageBitmap first (fastest method)
         if (window.createImageBitmap) {
           try {
             const bitmap = await createImageBitmap(file, {
@@ -720,6 +721,7 @@
           }
         }
 
+        // Fallback: Multi-step downscaling for better quality
         let currWidth = img.width;
         let currHeight = img.height;
         let source = img;
@@ -757,9 +759,10 @@
   }
 
   async function uploadImageToDrive(file) {
+    // Compress both images in parallel (major speedup)
     const [thumbData, hqData] = await Promise.all([
-      compressImage(file, 400, 0.35),
-      compressImage(file, 700, 0.55)
+      compressImage(file, 400, 0.35),  // Smaller thumbnail, lower quality
+      compressImage(file, 700, 0.55)   // Slightly smaller HQ, lower quality
     ]);
 
     const uniqueId = Date.now().toString().slice(-6); 
@@ -1160,13 +1163,6 @@
     activeImageUploadId++;
     const myUploadId = activeImageUploadId;
 
-    // Capture item info NOW so background work survives sheet closing
-    const capturedItemId = $('itemId').value;
-    const capturedItem = capturedItemId && capturedItemId.startsWith('row_')
-      ? items.find(i => i.id === capturedItemId)
-      : null;
-    const capturedRow = capturedItem ? capturedItem.rowNumber : null;
-
     if (currentLocalImageUrl) {
       URL.revokeObjectURL(currentLocalImageUrl);
     }
@@ -1192,36 +1188,46 @@
       </svg>
     `;
 
+    // Capture old URLs before they are overwritten
     const oldThumbUrl = $('itemImageThumb').value;
     const oldHqUrl = $('itemImageHq').value;
 
-    // PHASE 1: Upload only — spinner stops when this resolves
     pendingImageUpload = (async () => {
       try {
         const imageUrls = await uploadImageToDrive(file);
 
-        if (myUploadId !== activeImageUploadId) return null;
+        if (myUploadId === activeImageUploadId) {
+          $('itemImageThumb').value = imageUrls.thumb;
+          $('itemImageHq').value = imageUrls.hq;
 
-        // Update hidden inputs immediately
-        $('itemImageThumb').value = imageUrls.thumb;
-        $('itemImageHq').value = imageUrls.hq;
+          const currentId = $('itemId').value;
+          if (currentId && currentId.startsWith('row_')) {
+            const item = items.find(i => i.id === currentId);
+            if (item) {
+              item.thumb = imageUrls.thumb;
+              item.hq = imageUrls.hq;
+              delete item.image;
+              saveCache(items);
+              render();
+              await postToSheets({ action: 'update', row: item.rowNumber, thumb: imageUrls.thumb, hq: imageUrls.hq });
+              toast('Image saved');
+            }
+          } else {
+            toast('Image uploaded');
+          }
 
-        // Update local item state immediately
-        if (capturedItem) {
-          capturedItem.thumb = imageUrls.thumb;
-          capturedItem.hq = imageUrls.hq;
-          delete capturedItem.image;
-          saveCache(items);
-          render();
+          // Delete old images in background (non-blocking)
+          if (oldThumbUrl || oldHqUrl) {
+            deleteImageFromDrive(oldThumbUrl, oldHqUrl).catch(err => {
+              console.warn('Background deletion failed:', err);
+            });
+          }
         }
-
-        toast('Image uploaded');
-        return imageUrls; // ← promise resolves here, spinner stops
       } catch (err) {
+        console.error('Background upload failed:', err);
         if (myUploadId === activeImageUploadId) {
           toast('Upload failed: ' + err.message);
         }
-        return null;
       } finally {
         if (myUploadId === activeImageUploadId) {
           uploadBtn.classList.remove('uploading');
@@ -1230,27 +1236,6 @@
         }
       }
     })();
-
-    // PHASE 2: Background work — fire-and-forget, survives sheet closing
-    pendingImageUpload.then((imageUrls) => {
-      if (!imageUrls) return;
-
-      // Update sheet row silently
-      if (capturedRow) {
-        postToSheets({
-          action: 'update',
-          row: capturedRow,
-          thumb: imageUrls.thumb,
-          hq: imageUrls.hq
-        }).catch(err => console.warn('Background sheet update failed:', err));
-      }
-
-      // Delete old images silently
-      if (oldThumbUrl || oldHqUrl) {
-        deleteImageFromDrive(oldThumbUrl, oldHqUrl)
-          .catch(err => console.warn('Background deletion failed:', err));
-      }
-    }).catch(() => {});
 
     $('imageFileInput').value = '';
   });

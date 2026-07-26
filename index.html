@@ -359,7 +359,6 @@
     to { transform: rotate(360deg); }
   }
 
-  /* Lightbox Styles */
   .lightbox {
     position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 200;
     display: none; justify-content: center; align-items: center;
@@ -421,7 +420,6 @@
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
 </button>
 
-<!-- Add/Edit Sheet -->
 <div class="overlay" id="overlay">
   <div class="sheet">
     <div class="sheet-handle"></div>
@@ -510,7 +508,6 @@
   </div>
 </div>
 
-<!-- Custom Confirm Dialog -->
 <div class="confirm-overlay" id="confirmOverlay">
   <div class="confirm-dialog">
     <h3 id="confirmTitle">Confirm</h3>
@@ -522,7 +519,6 @@
   </div>
 </div>
 
-<!-- Lightbox for High Quality Images -->
 <div class="lightbox" id="lightbox">
   <button class="lightbox-close" id="lightboxClose">×</button>
   <img class="lightbox-img" id="lightboxImg" alt="High quality equipment image" />
@@ -579,9 +575,9 @@
   function closeConfirmInternal(result) {
     confirmOverlay.classList.remove('open');
     isConfirmOpen = false;
-    if (confirmResolver) { 
-      confirmResolver(result); 
-      confirmResolver = null; 
+    if (confirmResolver) {
+      confirmResolver(result);
+      confirmResolver = null;
     }
   }
 
@@ -689,17 +685,16 @@
     return new Promise((resolve, reject) => {
       const img = new Image();
       const objectUrl = URL.createObjectURL(file);
-      
+
       img.onload = async () => {
         let targetWidth = img.width;
         let targetHeight = img.height;
-        
+
         if (targetWidth > maxWidth) {
           targetHeight = Math.round((targetHeight * maxWidth) / targetWidth);
           targetWidth = maxWidth;
         }
 
-        // Try createImageBitmap first (fastest method)
         if (window.createImageBitmap) {
           try {
             const bitmap = await createImageBitmap(file, {
@@ -721,52 +716,48 @@
           }
         }
 
-        // Fallback: Multi-step downscaling for better quality
         let currWidth = img.width;
         let currHeight = img.height;
         let source = img;
-        
+
         while (currWidth > targetWidth * 2) {
           const stepCanvas = document.createElement('canvas');
           stepCanvas.width = Math.round(currWidth / 2);
           stepCanvas.height = Math.round(currHeight / 2);
           const stepCtx = stepCanvas.getContext('2d');
           stepCtx.drawImage(source, 0, 0, stepCanvas.width, stepCanvas.height);
-          
           currWidth = stepCanvas.width;
           currHeight = stepCanvas.height;
           source = stepCanvas;
         }
-        
+
         const finalCanvas = document.createElement('canvas');
         finalCanvas.width = targetWidth;
         finalCanvas.height = targetHeight;
         const finalCtx = finalCanvas.getContext('2d');
         finalCtx.drawImage(source, 0, 0, targetWidth, targetHeight);
-        
+
         const dataUrl = finalCanvas.toDataURL('image/jpeg', quality);
         URL.revokeObjectURL(objectUrl);
         resolve(dataUrl);
       };
-      
+
       img.onerror = () => {
         URL.revokeObjectURL(objectUrl);
         reject(new Error('Failed to load image'));
       };
-      
+
       img.src = objectUrl;
     });
   }
 
   async function uploadImageToDrive(file) {
-    // Compress both images in parallel (major speedup)
     const [thumbData, hqData] = await Promise.all([
-      compressImage(file, 400, 0.35),  // Smaller thumbnail, lower quality
-      compressImage(file, 700, 0.55)   // Slightly smaller HQ, lower quality
+      compressImage(file, 400, 0.35),
+      compressImage(file, 700, 0.55)
     ]);
 
-    const uniqueId = Date.now().toString().slice(-6); 
-    
+    const uniqueId = Date.now().toString().slice(-6);
     const hqName = `item${uniqueId}`;
     const thumbName = `thumb_item${uniqueId}`;
 
@@ -806,7 +797,7 @@
     if (ucMatch) fileId = ucMatch[1];
     const lhMatch = finalUrl.match(/lh3\.googleusercontent\.com\/d\/([^\/\?=]+)/);
     if (lhMatch) fileId = lhMatch[1];
-    
+
     if (fileId) {
       return `https://lh3.googleusercontent.com/d/${fileId}=${size}`;
     }
@@ -817,7 +808,7 @@
     const payload = { action: 'deleteImage' };
     if (thumbUrl) payload.thumbUrl = thumbUrl;
     if (hqUrl && hqUrl !== thumbUrl) payload.hqUrl = hqUrl;
-    
+
     if (!payload.thumbUrl && !payload.hqUrl) return true;
 
     try {
@@ -863,7 +854,7 @@
     saveCache(items);
     render();
     toast('Added');
-    try { await postToSheets({ action: 'add', ...data }); } 
+    try { await postToSheets({ action: 'add', ...data }); }
     catch (err) { console.error('Sync failed:', err); toast('Sync failed (saved locally)'); }
   }
 
@@ -873,7 +864,7 @@
     saveCache(items);
     render();
     toast('Updated');
-    try { await postToSheets({ action: 'update', row: item.rowNumber, ...data }); } 
+    try { await postToSheets({ action: 'update', row: item.rowNumber, ...data }); }
     catch (err) {
       console.error('Sync failed:', err);
       Object.assign(item, original);
@@ -899,8 +890,8 @@
     saveCache(items);
     render();
     toast('Deleted');
-    try { 
-      await postToSheets({ action: 'delete', row: item.rowNumber }); 
+    try {
+      await postToSheets({ action: 'delete', row: item.rowNumber });
     } catch (err) {
       console.error('Sync failed:', err);
       items = originalItems;
@@ -1116,7 +1107,7 @@
 
       $('itemImageThumb').value = '';
       $('itemImageHq').value = '';
-      
+
       const img = $('itemImageDisplay');
       const placeholder = $('imagePlaceholder');
       const imageContainer = $('imageContainer');
@@ -1151,6 +1142,9 @@
     }
   });
 
+  // ── IMAGE UPLOAD HANDLER ──
+  // Spinner stops as soon as the new image is on Drive.
+  // Sheet update + old image deletion run silently in the background.
   $('imageFileInput').addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -1188,51 +1182,62 @@
       </svg>
     `;
 
-    // Capture old URLs before they are overwritten
     const oldThumbUrl = $('itemImageThumb').value;
     const oldHqUrl = $('itemImageHq').value;
 
+    // pendingImageUpload resolves as soon as the new image is on Drive
     pendingImageUpload = (async () => {
       try {
         const imageUrls = await uploadImageToDrive(file);
 
-        if (myUploadId === activeImageUploadId) {
-          $('itemImageThumb').value = imageUrls.thumb;
-          $('itemImageHq').value = imageUrls.hq;
+        if (myUploadId !== activeImageUploadId) return;
 
-          const currentId = $('itemId').value;
-          if (currentId && currentId.startsWith('row_')) {
-            const item = items.find(i => i.id === currentId);
-            if (item) {
-              item.thumb = imageUrls.thumb;
-              item.hq = imageUrls.hq;
-              delete item.image;
-              saveCache(items);
-              render();
-              await postToSheets({ action: 'update', row: item.rowNumber, thumb: imageUrls.thumb, hq: imageUrls.hq });
-              toast('Image saved');
+        // Store new URLs immediately so Save can use them
+        $('itemImageThumb').value = imageUrls.thumb;
+        $('itemImageHq').value = imageUrls.hq;
+
+        // Stop spinner NOW — upload is done
+        uploadBtn.classList.remove('uploading');
+        uploadBtn.innerHTML = originalHtml;
+        pendingImageUpload = null;
+        toast('Image uploaded');
+
+        // ── Background work: update sheet row + delete old images ──
+        // This runs detached — continues even if the user closes the sheet
+        (async () => {
+          try {
+            const currentId = $('itemId') ? $('itemId').value : '';
+            if (currentId && currentId.startsWith('row_')) {
+              const item = items.find(i => i.id === currentId);
+              if (item) {
+                item.thumb = imageUrls.thumb;
+                item.hq = imageUrls.hq;
+                delete item.image;
+                saveCache(items);
+                render();
+                await postToSheets({ action: 'update', row: item.rowNumber, thumb: imageUrls.thumb, hq: imageUrls.hq });
+              }
             }
-          } else {
-            toast('Image uploaded');
+          } catch (err) {
+            console.warn('Background sheet update failed:', err);
           }
 
-          // Delete old images in background (non-blocking)
           if (oldThumbUrl || oldHqUrl) {
-            deleteImageFromDrive(oldThumbUrl, oldHqUrl).catch(err => {
-              console.warn('Background deletion failed:', err);
-            });
+            try {
+              await deleteImageFromDrive(oldThumbUrl, oldHqUrl);
+            } catch (err) {
+              console.warn('Background old image deletion failed:', err);
+            }
           }
-        }
+        })();
+
       } catch (err) {
-        console.error('Background upload failed:', err);
-        if (myUploadId === activeImageUploadId) {
-          toast('Upload failed: ' + err.message);
-        }
-      } finally {
+        console.error('Upload failed:', err);
         if (myUploadId === activeImageUploadId) {
           uploadBtn.classList.remove('uploading');
           uploadBtn.innerHTML = originalHtml;
           pendingImageUpload = null;
+          toast('Upload failed: ' + err.message);
         }
       }
     })();
@@ -1299,11 +1304,11 @@
     $('itemUnit').value = item ? (item.unit || '') : '';
     $('itemCategory').value = item ? (item.category || '') : '';
     $('itemLocation').value = item ? (item.location || '') : '';
-    
+
     const imgData = getImageData(item);
     $('itemImageThumb').value = imgData.thumb;
     $('itemImageHq').value = imgData.hq;
-    
+
     $('deleteBtn').style.display = item ? 'block' : 'none';
 
     loadImage(imgData.thumb, imgData.hq);
@@ -1339,7 +1344,7 @@
         thumb: $('itemImageThumb').value.trim(),
         hq: $('itemImageHq').value.trim()
       };
-      
+
       if (!data.name) {
         isSubmitting = false;
         return;

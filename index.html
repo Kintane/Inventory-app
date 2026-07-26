@@ -196,7 +196,7 @@
   .image-container {
     width: 100%;
     aspect-ratio: 16/9;
-    min-height: 150px; /* Fallback for older mobile browsers */
+    min-height: 150px;
     background: var(--surface-2);
     border: 2px dashed var(--border);
     border-radius: 12px;
@@ -1183,11 +1183,25 @@
       </svg>
     `;
 
+    // Capture old URLs before they are overwritten by the new upload
+    const oldThumbUrl = $('itemImageThumb').value;
+    const oldHqUrl = $('itemImageHq').value;
+
     pendingImageUpload = (async () => {
       try {
         const imageUrls = await uploadImageToDrive(file);
 
         if (myUploadId === activeImageUploadId) {
+          // Delete old images from Drive if they exist
+          if (oldThumbUrl || oldHqUrl) {
+            try {
+              await deleteImageFromDrive(oldThumbUrl, oldHqUrl);
+            } catch (err) {
+              console.error('Failed to delete old image from Drive:', err);
+              // Continue with the update even if deletion fails, to avoid blocking the UI
+            }
+          }
+
           $('itemImageThumb').value = imageUrls.thumb;
           $('itemImageHq').value = imageUrls.hq;
 

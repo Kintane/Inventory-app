@@ -753,8 +753,8 @@
 
   async function uploadImageToDrive(file) {
     const [thumbData, hqData] = await Promise.all([
-      compressImage(file, 400, 0.35),
-      compressImage(file, 700, 0.55)
+      compressImage(file, 500, 0.35),
+      compressImage(file, 1000, 0.55)
     ]);
 
     const uniqueId = Date.now().toString().slice(-6);

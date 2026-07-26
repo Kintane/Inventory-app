@@ -1051,7 +1051,8 @@
   $('cancelBtn').addEventListener('click', closeSheet);
   overlay.addEventListener('click', e => { if (e.target === overlay) closeSheet(); });
 
-  $('uploadBtn').addEventListener('click', () => {
+  $('uploadBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
     $('imageFileInput').click();
   });
 
@@ -1061,7 +1062,8 @@
     if (e.target === confirmOverlay) closeConfirm(false);
   });
 
-  $('deleteImageBtn').addEventListener('click', async () => {
+  $('deleteImageBtn').addEventListener('click', async (e) => {
+    e.stopPropagation();
     const thumbUrl = $('itemImageThumb').value;
     const hqUrl = $('itemImageHq').value;
 
@@ -1264,11 +1266,11 @@
 
     if (hqDisplayUrl) {
       img.style.cursor = 'zoom-in';
-      img.onclick = () => openLightbox(hqDisplayUrl);
-      imageContainer.style.cursor = 'zoom-in';
-      imageContainer.onclick = (e) => {
-        if (e.target !== img) openLightbox(hqDisplayUrl);
+      img.onclick = (e) => {
+        e.stopPropagation();
+        openLightbox(hqDisplayUrl);
       };
+      imageContainer.style.cursor = 'zoom-in';
     }
   }
 

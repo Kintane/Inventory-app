@@ -532,6 +532,10 @@
 
 <script>
 (() => {
+  // ⚠️ IMPORTANT: Replace this with your actual ImgBB API Key
+  // Get one for free at: https://api.imgbb.com/
+  const IMGBB_API_KEY = 'a6288a438bb10cc0a3750f28e89b9afc';
+  
   const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzywPvPUZmEX-77C_5uv75UhCrtFbdp4D9ZzHfIMUuP0qOZNmlbSRhrSMVRli3hpZPmbQ/exec';
   const CACHE_KEY = 'equipment_cache_v4';
   const CACHE_MAX_AGE = 24 * 60 * 60 * 1000;
@@ -699,7 +703,6 @@
           targetWidth = maxWidth;
         }
 
-        // Try createImageBitmap first (fastest method)
         if (window.createImageBitmap) {
           try {
             const bitmap = await createImageBitmap(file, {
@@ -721,7 +724,6 @@
           }
         }
 
-        // Fallback: Multi-step downscaling for better quality
         let currWidth = img.width;
         let currHeight = img.height;
         let source = img;
@@ -758,30 +760,68 @@
     });
   }
 
-  async function uploadImageToDrive(file) {
-    // Compress both images in parallel (major speedup)
-    const [thumbData, hqData] = await Promise.all([
-      compressImage(file, 400, 0.35),  // Smaller thumbnail, lower quality
-      compressImage(file, 700, 0.55)   // Slightly smaller HQ, lower quality
+  // --- IMGBB INTEGRATION ---
+  async function uploadImageToImgBB(file, prefix = 'item') {
+    const [thumbDataUrl, hqDataUrl] = await Promise.all([
+      compressImage(file, 400, 0.4),  // Smaller thumbnail
+      compressImage(file, 1200, 0.8)  // High quality
     ]);
 
-    const uniqueId = Date.now().toString().slice(-6); 
+    const uniqueId = Date.now().toString().slice(-6);
     
-    const hqName = `item${uniqueId}`;
-    const thumbName = `thumb_item${uniqueId}`;
+    async function uploadSingle(dataUrl, name) {
+      const blob = await (await fetch(dataUrl)).blob();
+      const formData = new FormData();
+      formData.append('key', IMGBB_API_KEY);
+      formData.append('image', blob);
+      formData.append('name', `${prefix}_${name}_${uniqueId}`);
+      
+      const response = await fetch('https://api.imgbb.com/1/upload', {
+        method: 'POST',
+        body: formData
+      });
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error ? result.error.message : 'ImgBB upload failed');
+      }
+      return result.data.url;
+    }
 
-    const result = await postToSheets({
-      action: 'uploadImage',
-      thumbData: thumbData,
-      hqData: hqData,
-      filename: hqName,
-      hqName: hqName,
-      thumbName: thumbName
-    });
+    const [thumbUrl, hqUrl] = await Promise.all([
+      uploadSingle(thumbDataUrl, 'thumb'),
+      uploadSingle(hqDataUrl, 'hq')
+    ]);
 
-    if (!result.success) throw new Error(result.message);
-    return { thumb: result.thumbUrl, hq: result.hqUrl };
+    return { thumb: thumbUrl, hq: hqUrl };
   }
+
+  function extractImgBBId(url) {
+    if (!url) return null;
+    // Matches https://i.ibb.co/xxxxx/filename.jpg
+    const match = url.match(/i\.ibb\.co\/([a-zA-Z0-9]+)\//);
+    return match ? match[1] : null;
+  }
+
+  async function deleteImageFromImgBB(url) {
+    if (!url) return true;
+    const id = extractImgBBId(url);
+    if (!id) {
+      console.warn('Could not extract ImgBB ID from URL:', url);
+      return true; // Assume success if we can't find ID to avoid blocking UI
+    }
+    
+    try {
+      const response = await fetch(`https://api.imgbb.com/1/image/${id}?key=${IMGBB_API_KEY}`, {
+        method: 'DELETE'
+      });
+      const result = await response.json();
+      return result.success;
+    } catch (err) {
+      console.error('ImgBB deletion failed:', err);
+      return false;
+    }
+  }
+  // --- END IMGBB INTEGRATION ---
 
   function getImageData(item) {
     if (!item) return { thumb: '', hq: '' };
@@ -796,9 +836,16 @@
     return { thumb: item.thumb || '', hq: item.hq || '' };
   }
 
-  function getOptimizedDriveUrl(url, size = 'w1000') {
+  function getOptimizedImageUrl(url, size = 'w1000') {
     if (!url) return '';
     let finalUrl = url.trim();
+    
+    // If it's already an ImgBB URL, return it as-is (ImgBB serves optimized formats automatically)
+    if (finalUrl.includes('i.ibb.co') || finalUrl.includes('ibb.co')) {
+      return finalUrl;
+    }
+    
+    // Fallback for any existing Google Drive URLs
     let fileId = null;
     const thumbnailMatch = finalUrl.match(/[?&]id=([^&]+)/);
     if (thumbnailMatch) fileId = thumbnailMatch[1];
@@ -811,22 +858,6 @@
       return `https://lh3.googleusercontent.com/d/${fileId}=${size}`;
     }
     return finalUrl;
-  }
-
-  async function deleteImageFromDrive(thumbUrl, hqUrl) {
-    const payload = { action: 'deleteImage' };
-    if (thumbUrl) payload.thumbUrl = thumbUrl;
-    if (hqUrl && hqUrl !== thumbUrl) payload.hqUrl = hqUrl;
-    
-    if (!payload.thumbUrl && !payload.hqUrl) return true;
-
-    try {
-      const result = await postToSheets(payload);
-      return result.success;
-    } catch (err) {
-      console.error('Delete image failed:', err);
-      throw err;
-    }
   }
 
   async function loadAll(silent = false, force = false) {
@@ -889,9 +920,12 @@
 
     if (imgData.thumb || imgData.hq) {
       try {
-        await deleteImageFromDrive(imgData.thumb, imgData.hq);
+        await Promise.all([
+          imgData.thumb ? deleteImageFromImgBB(imgData.thumb) : Promise.resolve(),
+          (imgData.hq && imgData.hq !== imgData.thumb) ? deleteImageFromImgBB(imgData.hq) : Promise.resolve()
+        ]);
       } catch (err) {
-        console.error('Failed to delete image from Drive:', err);
+        console.error('Failed to delete images from ImgBB:', err);
       }
     }
 
@@ -1095,7 +1129,7 @@
       return;
     }
 
-    const confirmed = await showConfirm('Delete image?', 'This will delete the images from Google Drive and remove them from this item.', 'Delete Image');
+    const confirmed = await showConfirm('Delete image?', 'This will delete the images from ImgBB and remove them from this item.', 'Delete Image');
     if (!confirmed) return;
 
     const deleteBtn = $('deleteImageBtn');
@@ -1112,7 +1146,10 @@
         </svg>
       `;
 
-      await deleteImageFromDrive(thumbUrl, hqUrl);
+      await Promise.all([
+        thumbUrl ? deleteImageFromImgBB(thumbUrl) : Promise.resolve(),
+        hqUrl ? deleteImageFromImgBB(hqUrl) : Promise.resolve()
+      ]);
 
       $('itemImageThumb').value = '';
       $('itemImageHq').value = '';
@@ -1188,13 +1225,12 @@
       </svg>
     `;
 
-    // Capture old URLs before they are overwritten
     const oldThumbUrl = $('itemImageThumb').value;
     const oldHqUrl = $('itemImageHq').value;
 
     pendingImageUpload = (async () => {
       try {
-        const imageUrls = await uploadImageToDrive(file);
+        const imageUrls = await uploadImageToImgBB(file);
 
         if (myUploadId === activeImageUploadId) {
           $('itemImageThumb').value = imageUrls.thumb;
@@ -1216,9 +1252,11 @@
             toast('Image uploaded');
           }
 
-          // Delete old images in background (non-blocking)
           if (oldThumbUrl || oldHqUrl) {
-            deleteImageFromDrive(oldThumbUrl, oldHqUrl).catch(err => {
+            Promise.all([
+              oldThumbUrl ? deleteImageFromImgBB(oldThumbUrl) : Promise.resolve(),
+              oldHqUrl ? deleteImageFromImgBB(oldHqUrl) : Promise.resolve()
+            ]).catch(err => {
               console.warn('Background deletion failed:', err);
             });
           }
@@ -1266,8 +1304,8 @@
 
     deleteBtn.disabled = false;
 
-    const thumbDisplayUrl = getOptimizedDriveUrl(thumbUrl, 'w480');
-    const hqDisplayUrl = getOptimizedDriveUrl(hqUrl, 'w1920');
+    const thumbDisplayUrl = getOptimizedImageUrl(thumbUrl, 'w480');
+    const hqDisplayUrl = getOptimizedImageUrl(hqUrl, 'w1920');
 
     img.src = thumbDisplayUrl;
     img.onload = () => {

@@ -186,6 +186,7 @@
   .view-header {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 12px;
     margin-bottom: 20px;
   }
@@ -194,9 +195,7 @@
     flex: 1;
     font-size: 22px;
     font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 12px;
+    min-width: 0;
   }
   
   .edit-btn {
@@ -210,6 +209,7 @@
     display: grid;
     place-items: center;
     transition: all 0.15s;
+    flex-shrink: 0;
   }
   
   .edit-btn:hover {
@@ -574,15 +574,13 @@
       </h2>
       
       <div class="view-header">
-        <div class="view-title">
-          <span id="viewItemName"></span>
-          <button class="edit-btn" id="editBtn" title="Edit item">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-            </svg>
-          </button>
-        </div>
+        <div class="view-title" id="viewItemName"></div>
+        <button class="edit-btn" id="editBtn" title="Edit item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+        </button>
       </div>
       
       <div class="view-image" id="viewImageContainer">
@@ -752,7 +750,7 @@
   let isConfirmOpen = false;
   let isLightboxOpen = false;
   let confirmResolver = null;
-  let currentViewMode = 'view'; // 'view' or 'edit'
+  let currentViewMode = 'view';
   let currentItemForView = null;
 
   const $ = id => document.getElementById(id);
@@ -793,9 +791,16 @@
       const thumbDisplayUrl = getOptimizedDriveUrl(imgData.thumb, 'w480');
       const hqDisplayUrl = getOptimizedDriveUrl(imgData.hq, 'w1920');
       
+      viewImg.crossOrigin = "anonymous";
       viewImg.onload = () => {
         viewImg.classList.add('loaded');
         viewPlaceholder.style.display = 'none';
+        updateSheetBackground(viewImg);
+      };
+      viewImg.onerror = () => {
+        viewImg.classList.remove('loaded');
+        viewPlaceholder.style.display = 'block';
+        setFallbackBackground();
       };
       viewImg.src = thumbDisplayUrl;
       
@@ -803,9 +808,9 @@
         viewContainer.style.cursor = 'zoom-in';
         viewContainer.onclick = () => openLightbox(hqDisplayUrl);
       }
+    } else {
+      setFallbackBackground();
     }
-    
-    updateSheetBackground(viewImg);
     
     sheet.scrollTop = 0;
   }

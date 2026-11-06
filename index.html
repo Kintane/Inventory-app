@@ -1,3 +1,6 @@
+Here is the updated code. I've changed the gradient direction in both the image-extracted background and the randomized fallback to `135deg` (which runs diagonally from top-left to bottom-right). The top-left corner now holds the most vibrant/opaque tint, smoothly fading to fully transparent at the bottom-right, creating a beautiful diagonal frosted-glass effect over your list.
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -598,9 +601,9 @@
     const encodedSvg = encodeURIComponent(svg);
     const svgUrl = `url("data:image/svg+xml,${encodedSvg}")`;
     
-    // Semi-transparent tint fading to fully transparent
-    const colorTop = `hsla(${hue}, 25%, 20%, 0.35)`;
-    sheet.style.background = `${svgUrl}, linear-gradient(180deg, ${colorTop} 0%, transparent 65%)`;
+    // Diagonal gradient: brightest/most opaque at top-left (0%), fading to transparent at bottom-right
+    const colorTop = `hsla(${hue}, 25%, 25%, 0.45)`;
+    sheet.style.background = `${svgUrl}, linear-gradient(135deg, ${colorTop} 0%, transparent 70%)`;
     sheet.style.backgroundSize = `cover, cover`;
     sheet.style.backgroundPosition = `center, center`;
   }
@@ -649,11 +652,11 @@
       g = Math.round(g / count);
       b = Math.round(b / count);
       
-      // Use low alpha values for a transparent, frosted-glass fade
-      const colorTop = `rgba(${r}, ${g}, ${b}, 0.45)`;
-      const colorMid = `rgba(${r}, ${g}, ${b}, 0.15)`;
+      // Diagonal gradient: brightest/most opaque at top-left (0%), fading to transparent at bottom-right (135deg)
+      const colorTop = `rgba(${r}, ${g}, ${b}, 0.55)`;
+      const colorMid = `rgba(${r}, ${g}, ${b}, 0.20)`;
       
-      sheet.style.background = `linear-gradient(180deg, ${colorTop} 0%, ${colorMid} 40%, transparent 85%)`;
+      sheet.style.background = `linear-gradient(135deg, ${colorTop} 0%, ${colorMid} 45%, transparent 85%)`;
       
     } catch (e) {
       console.warn('Canvas tainted or error reading image data:', e);
@@ -1514,3 +1517,4 @@
 </script>
 </body>
 </html>
+```

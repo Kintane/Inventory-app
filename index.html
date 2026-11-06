@@ -21,6 +21,9 @@
     font-size: 16px; min-height: 100vh; overscroll-behavior-y: auto;
   }
   body { padding-bottom: 100px; }
+  body.modal-open {
+    overflow: hidden;
+  }
   header {
     position: sticky; top: 0; z-index: 10; background: rgba(11,11,14,0.85);
     backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
@@ -117,6 +120,8 @@
   .overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 50;
     display: none; justify-content: center; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
   .overlay.open { display: flex; animation: fadeIn 0.2s; }
 
@@ -143,8 +148,7 @@
     border: 1px solid var(--border);
     border-radius: 20px;
     padding: 22px;
-    max-height: 92vh;
-    overflow-y: auto;
+    margin: 4vh 0;
     animation: popIn 0.25s cubic-bezier(0.2,0.8,0.2,1);
     backdrop-filter: blur(16px) saturate(1.2);
     -webkit-backdrop-filter: blur(16px) saturate(1.2);
@@ -153,16 +157,13 @@
   @media (max-width: 639px) {
     .overlay.open { align-items: flex-start; }
     .sheet {
-      height: 100vh;
-      height: 100dvh;
-      max-height: 100vh;
-      max-height: 100dvh;
+      min-height: 100vh;
+      min-height: 100dvh;
       border-radius: 0;
       padding: 18px;
       padding-top: calc(18px + env(safe-area-inset-top, 0px));
       padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
-      -webkit-overflow-scrolling: touch;
-      overscroll-behavior-y: contain;
+      margin: 0;
       background: rgba(22, 22, 27, 0.55);
       backdrop-filter: blur(20px) saturate(1.4);
       -webkit-backdrop-filter: blur(24px) saturate(1.4);
@@ -812,7 +813,7 @@
       setFallbackBackground();
     }
     
-    sheet.scrollTop = 0;
+    overlay.scrollTop = 0;
   }
 
   function showEditMode(item) {
@@ -838,7 +839,7 @@
 
     loadImage(imgData.thumb, imgData.hq);
 
-    sheet.scrollTop = 0;
+    overlay.scrollTop = 0;
     setTimeout(() => $('itemName').focus(), 200);
   }
 
@@ -1029,6 +1030,7 @@
     isModalOpen = false;
     currentViewMode = 'view';
     currentItemForView = null;
+    document.body.classList.remove('modal-open');
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
   }
 
@@ -1473,6 +1475,7 @@
     history.pushState({ modal: true }, '');
     isModalOpen = true;
     overlay.classList.add('open');
+    document.body.classList.add('modal-open');
     showViewMode(item);
   }
 
@@ -1496,6 +1499,7 @@
     history.pushState({ modal: true }, '');
     isModalOpen = true;
     overlay.classList.add('open');
+    document.body.classList.add('modal-open');
     showEditMode(null);
   });
   

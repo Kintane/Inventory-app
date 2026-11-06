@@ -180,6 +180,146 @@
   }
   .close-btn { background: none; border: none; color: var(--text-dim); font-size: 24px; cursor: pointer; padding: 4px 8px; }
 
+  .view-mode { display: none; }
+  .view-mode.active { display: block; }
+  
+  .view-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  
+  .view-title {
+    flex: 1;
+    font-size: 22px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  
+  .edit-btn {
+    background: var(--accent-soft);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: all 0.15s;
+  }
+  
+  .edit-btn:hover {
+    background: var(--accent);
+    color: white;
+  }
+  
+  .edit-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .view-image {
+    width: 100%;
+    aspect-ratio: 16/9;
+    min-height: 150px;
+    background: rgba(31, 31, 38, 0.5);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: zoom-in;
+  }
+  
+  .view-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .view-image-placeholder {
+    color: var(--text-faint);
+    font-size: 13px;
+    text-align: center;
+    padding: 20px;
+  }
+  
+  .view-image-placeholder svg {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 8px;
+    opacity: 0.5;
+  }
+  
+  .view-details {
+    display: grid;
+    gap: 16px;
+  }
+  
+  .view-field {
+    background: rgba(11, 11, 14, 0.4);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+  }
+  
+  .view-field-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  
+  .view-field-value {
+    font-size: 16px;
+    color: var(--text);
+    font-weight: 500;
+  }
+  
+  .view-field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  
+  .view-qty-group {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  
+  .view-qty-main {
+    font-size: 24px;
+    font-weight: 700;
+  }
+  
+  .view-qty-separator {
+    color: var(--text-faint);
+    font-size: 18px;
+  }
+  
+  .view-qty-min {
+    font-size: 18px;
+    color: var(--text-dim);
+  }
+  
+  .view-qty-unit {
+    font-size: 14px;
+    color: var(--text-dim);
+    margin-left: 4px;
+  }
+
+  .edit-mode { display: none; }
+  .edit-mode.active { display: block; }
+
   .name-field { margin-bottom: 14px; }
 
   .image-qty-row {
@@ -425,88 +565,147 @@
 <div class="overlay" id="overlay">
   <div class="sheet">
     <div class="sheet-handle"></div>
-    <h2>
-      <span id="sheetTitle">Add equipment</span>
-      <button class="close-btn" id="closeSheet">×</button>
-    </h2>
-    <form id="itemForm">
-      <input type="hidden" id="itemId" />
-
-      <div class="name-field">
-        <div class="field">
-          <label for="itemName">Name</label>
-          <input type="text" id="itemName" required placeholder="e.g. Safety gloves" />
+    
+    <!-- View Mode (Read-Only) -->
+    <div class="view-mode" id="viewMode">
+      <h2>
+        <span id="viewTitle">Item Details</span>
+        <button class="close-btn" id="closeViewBtn">×</button>
+      </h2>
+      
+      <div class="view-header">
+        <div class="view-title">
+          <span id="viewItemName"></span>
+          <button class="edit-btn" id="editBtn" title="Edit item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+          </button>
         </div>
       </div>
+      
+      <div class="view-image" id="viewImageContainer">
+        <img id="viewImage" alt="Equipment image" />
+        <div class="view-image-placeholder" id="viewImagePlaceholder">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <polyline points="21 15 16 10 5 21"/>
+          </svg>
+          <div>No image</div>
+        </div>
+      </div>
+      
+      <div class="view-details">
+        <div class="view-field">
+          <div class="view-field-label">Quantity</div>
+          <div class="view-qty-group">
+            <span class="view-qty-main" id="viewQty"></span>
+            <span class="view-qty-separator">/</span>
+            <span class="view-qty-min" id="viewMin"></span>
+            <span class="view-qty-unit" id="viewUnit"></span>
+          </div>
+        </div>
+        
+        <div class="view-field-row">
+          <div class="view-field">
+            <div class="view-field-label">Category</div>
+            <div class="view-field-value" id="viewCategory"></div>
+          </div>
+          <div class="view-field">
+            <div class="view-field-label">Location</div>
+            <div class="view-field-value" id="viewLocation"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Edit Mode -->
+    <div class="edit-mode" id="editMode">
+      <h2>
+        <span id="editTitle">Edit equipment</span>
+        <button class="close-btn" id="closeEditBtn">×</button>
+      </h2>
+      <form id="itemForm">
+        <input type="hidden" id="itemId" />
 
-      <div class="image-qty-row">
-        <div class="image-column">
-          <div class="image-container" id="imageContainer">
-            <img id="itemImageDisplay" alt="Equipment image" />
-            <div class="image-placeholder" id="imagePlaceholder">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                <circle cx="8.5" cy="8.5" r="1.5"/>
-                <polyline points="21 15 16 10 5 21"/>
-              </svg>
-              <div>No image</div>
-            </div>
-            <div class="image-buttons">
-              <button type="button" class="image-btn" id="uploadBtn" title="Upload image">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                  <polyline points="17 8 12 3 7 8"/>
-                  <line x1="12" y1="3" x2="12" y2="15"/>
+        <div class="name-field">
+          <div class="field">
+            <label for="itemName">Name</label>
+            <input type="text" id="itemName" required placeholder="e.g. Safety gloves" />
+          </div>
+        </div>
+
+        <div class="image-qty-row">
+          <div class="image-column">
+            <div class="image-container" id="imageContainer">
+              <img id="itemImageDisplay" alt="Equipment image" />
+              <div class="image-placeholder" id="imagePlaceholder">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                  <circle cx="8.5" cy="8.5" r="1.5"/>
+                  <polyline points="21 15 16 10 5 21"/>
                 </svg>
-              </button>
-              <button type="button" class="image-btn delete-btn" id="deleteImageBtn" disabled title="Delete image">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="3 6 5 6 21 6"/>
-                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                  <line x1="10" y1="11" x2="10" y2="17"/>
-                  <line x1="14" y1="11" x2="14" y2="17"/>
-                </svg>
-              </button>
+                <div>No image</div>
+              </div>
+              <div class="image-buttons">
+                <button type="button" class="image-btn" id="uploadBtn" title="Upload image">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                  </svg>
+                </button>
+                <button type="button" class="image-btn delete-btn" id="deleteImageBtn" disabled title="Delete image">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    <line x1="10" y1="11" x2="10" y2="17"/>
+                    <line x1="14" y1="11" x2="14" y2="17"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <input type="file" id="imageFileInput" accept="image/*" />
+            <input type="hidden" id="itemImageThumb" />
+            <input type="hidden" id="itemImageHq" />
+          </div>
+
+          <div class="qty-fields-column">
+            <div class="compact-field">
+              <label for="itemQty">Qty</label>
+              <input type="number" id="itemQty" min="0" value="0" required />
+            </div>
+            <div class="compact-field">
+              <label for="itemMin">Min</label>
+              <input type="number" id="itemMin" min="0" value="5" required />
+            </div>
+            <div class="compact-field">
+              <label for="itemUnit">Unit</label>
+              <input type="text" id="itemUnit" placeholder="pcs" />
             </div>
           </div>
-          <input type="file" id="imageFileInput" accept="image/*" />
-          <input type="hidden" id="itemImageThumb" />
-          <input type="hidden" id="itemImageHq" />
         </div>
 
-        <div class="qty-fields-column">
-          <div class="compact-field">
-            <label for="itemQty">Qty</label>
-            <input type="number" id="itemQty" min="0" value="0" required />
+        <div class="details-row">
+          <div class="field">
+            <label for="itemCategory">Category</label>
+            <input type="text" id="itemCategory" placeholder="PPE, Tools..." />
           </div>
-          <div class="compact-field">
-            <label for="itemMin">Min</label>
-            <input type="number" id="itemMin" min="0" value="5" required />
-          </div>
-          <div class="compact-field">
-            <label for="itemUnit">Unit</label>
-            <input type="text" id="itemUnit" placeholder="pcs" />
+          <div class="field">
+            <label for="itemLocation">Location</label>
+            <input type="text" id="itemLocation" placeholder="Shelf A3..." />
           </div>
         </div>
-      </div>
 
-      <div class="details-row">
-        <div class="field">
-          <label for="itemCategory">Category</label>
-          <input type="text" id="itemCategory" placeholder="PPE, Tools..." />
+        <div class="actions">
+          <button type="button" class="btn btn-danger" id="deleteBtn" style="display:none">Delete</button>
+          <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="saveBtn">Save</button>
         </div>
-        <div class="field">
-          <label for="itemLocation">Location</label>
-          <input type="text" id="itemLocation" placeholder="Shelf A3..." />
-        </div>
-      </div>
-
-      <div class="actions">
-        <button type="button" class="btn btn-danger" id="deleteBtn" style="display:none">Delete</button>
-        <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
-        <button type="submit" class="btn btn-primary" id="saveBtn">Save</button>
-      </div>
-    </form>
+      </form>
+    </div>
   </div>
 </div>
 
@@ -553,57 +752,89 @@
   let isConfirmOpen = false;
   let isLightboxOpen = false;
   let confirmResolver = null;
+  let currentViewMode = 'view'; // 'view' or 'edit'
+  let currentItemForView = null;
 
   const $ = id => document.getElementById(id);
   const listEl = $('list');
   const overlay = $('overlay');
   const sheet = overlay.querySelector('.sheet');
+  const viewMode = $('viewMode');
+  const editMode = $('editMode');
   const categorySelect = $('categorySelect');
   const limitSelect = $('limitSelect');
   const confirmOverlay = $('confirmOverlay');
 
-  function rgbToHsl(r, g, b) {
-    r /= 255; g /= 255; b /= 255;
-    const max = Math.max(r, g, b), min = Math.min(r, g, b);
-    let h, s, l = (max + min) / 2;
-
-    if (max === min) {
-      h = s = 0;
-    } else {
-      const d = max - min;
-      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-      switch (max) {
-        case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
-        case g: h = ((b - r) / d + 2) / 6; break;
-        case b: h = ((r - g) / d + 4) / 6; break;
+  function showViewMode(item) {
+    currentViewMode = 'view';
+    currentItemForView = item;
+    
+    viewMode.classList.add('active');
+    editMode.classList.remove('active');
+    
+    $('viewItemName').textContent = item.name;
+    $('viewQty').textContent = item.qty;
+    $('viewMin').textContent = item.min;
+    $('viewUnit').textContent = item.unit || '';
+    $('viewCategory').textContent = item.category || '—';
+    $('viewLocation').textContent = item.location || '—';
+    
+    const imgData = getImageData(item);
+    const viewImg = $('viewImage');
+    const viewPlaceholder = $('viewImagePlaceholder');
+    const viewContainer = $('viewImageContainer');
+    
+    viewImg.classList.remove('loaded');
+    viewPlaceholder.style.display = 'block';
+    viewContainer.style.cursor = 'default';
+    viewContainer.onclick = null;
+    
+    if (imgData.thumb || imgData.hq) {
+      const thumbDisplayUrl = getOptimizedDriveUrl(imgData.thumb, 'w480');
+      const hqDisplayUrl = getOptimizedDriveUrl(imgData.hq, 'w1920');
+      
+      viewImg.onload = () => {
+        viewImg.classList.add('loaded');
+        viewPlaceholder.style.display = 'none';
+      };
+      viewImg.src = thumbDisplayUrl;
+      
+      if (hqDisplayUrl) {
+        viewContainer.style.cursor = 'zoom-in';
+        viewContainer.onclick = () => openLightbox(hqDisplayUrl);
       }
     }
-    return [h * 360, s * 100, l * 100];
+    
+    updateSheetBackground(viewImg);
+    
+    sheet.scrollTop = 0;
   }
 
-  function hslToRgb(h, s, l) {
-    h /= 360; s /= 100; l /= 100;
-    let r, g, b;
+  function showEditMode(item) {
+    currentViewMode = 'edit';
+    
+    viewMode.classList.remove('active');
+    editMode.classList.add('active');
+    
+    $('editTitle').textContent = item ? 'Edit equipment' : 'Add equipment';
+    $('itemId').value = item ? item.id : '';
+    $('itemName').value = item ? item.name : '';
+    $('itemQty').value = item ? item.qty : 0;
+    $('itemMin').value = item ? item.min : 5;
+    $('itemUnit').value = item ? (item.unit || '') : '';
+    $('itemCategory').value = item ? (item.category || '') : '';
+    $('itemLocation').value = item ? (item.location || '') : '';
+    
+    const imgData = getImageData(item);
+    $('itemImageThumb').value = imgData.thumb;
+    $('itemImageHq').value = imgData.hq;
+    
+    $('deleteBtn').style.display = item ? 'block' : 'none';
 
-    if (s === 0) {
-      r = g = b = l;
-    } else {
-      const hue2rgb = (p, q, t) => {
-        if (t < 0) t += 1;
-        if (t > 1) t -= 1;
-        if (t < 1/6) return p + (q - p) * 6 * t;
-        if (t < 1/2) return q;
-        if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
-        return p;
-      };
+    loadImage(imgData.thumb, imgData.hq);
 
-      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-      const p = 2 * l - q;
-      r = hue2rgb(p, q, h + 1/3);
-      g = hue2rgb(p, q, h);
-      b = hue2rgb(p, q, h - 1/3);
-    }
-    return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+    sheet.scrollTop = 0;
+    setTimeout(() => $('itemName').focus(), 200);
   }
 
   function setFallbackBackground() {
@@ -715,6 +946,50 @@
     }
   }
 
+  function rgbToHsl(r, g, b) {
+    r /= 255; g /= 255; b /= 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    let h, s, l = (max + min) / 2;
+
+    if (max === min) {
+      h = s = 0;
+    } else {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch (max) {
+        case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+        case g: h = ((b - r) / d + 2) / 6; break;
+        case b: h = ((r - g) / d + 4) / 6; break;
+      }
+    }
+    return [h * 360, s * 100, l * 100];
+  }
+
+  function hslToRgb(h, s, l) {
+    h /= 360; s /= 100; l /= 100;
+    let r, g, b;
+
+    if (s === 0) {
+      r = g = b = l;
+    } else {
+      const hue2rgb = (p, q, t) => {
+        if (t < 0) t += 1;
+        if (t > 1) t -= 1;
+        if (t < 1/6) return p + (q - p) * 6 * t;
+        if (t < 1/2) return q;
+        if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+        return p;
+      };
+
+      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+      const p = 2 * l - q;
+      r = hue2rgb(p, q, h + 1/3);
+      g = hue2rgb(p, q, h);
+      b = hue2rgb(p, q, h - 1/3);
+    }
+    return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+  }
+
   function showConfirm(title, message, okLabel = 'Delete') {
     return new Promise((resolve) => {
       $('confirmTitle').textContent = title;
@@ -747,6 +1022,8 @@
   function closeSheetInternal() {
     overlay.classList.remove('open');
     isModalOpen = false;
+    currentViewMode = 'view';
+    currentItemForView = null;
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
   }
 
@@ -783,10 +1060,14 @@
     if (isConfirmOpen) { closeConfirmInternal(false); return; }
     if (isLightboxOpen) { closeLightboxInternal(); return; }
     if (isModalOpen) {
-      const active = document.activeElement;
-      const isInput = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT');
-      if (isInput) { active.blur(); closeSheetInternal(); }
-      else { closeSheetInternal(); }
+      if (currentViewMode === 'edit') {
+        showViewMode(currentItemForView);
+      } else {
+        const active = document.activeElement;
+        const isInput = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT');
+        if (isInput) { active.blur(); closeSheetInternal(); }
+        else { closeSheetInternal(); }
+      }
     }
   });
 
@@ -1180,8 +1461,15 @@
     if (!itemEl) return;
     const item = items.find(i => i.id === itemEl.dataset.id);
     if (!item) return;
-    openEdit(item);
+    openView(item);
   });
+
+  function openView(item) {
+    history.pushState({ modal: true }, '');
+    isModalOpen = true;
+    overlay.classList.add('open');
+    showViewMode(item);
+  }
 
   categorySelect.addEventListener('change', e => { currentCategory = e.target.value; displayLimit = currentLimit === 'all' ? Infinity : currentLimit; render(); });
   limitSelect.addEventListener('change', e => {
@@ -1199,9 +1487,32 @@
     }, SEARCH_DEBOUNCE_MS);
   });
 
-  $('addBtn').addEventListener('click', () => openEdit(null));
-  $('closeSheet').addEventListener('click', closeSheet);
-  $('cancelBtn').addEventListener('click', closeSheet);
+  $('addBtn').addEventListener('click', () => {
+    history.pushState({ modal: true }, '');
+    isModalOpen = true;
+    overlay.classList.add('open');
+    showEditMode(null);
+  });
+  
+  $('closeViewBtn').addEventListener('click', closeSheet);
+  $('closeEditBtn').addEventListener('click', closeSheet);
+  
+  $('editBtn').addEventListener('click', () => {
+    if (currentItemForView) {
+      history.pushState({ modal: true }, '');
+      showEditMode(currentItemForView);
+    }
+  });
+  
+  $('cancelBtn').addEventListener('click', () => {
+    if (currentItemForView) {
+      history.back();
+      showViewMode(currentItemForView);
+    } else {
+      closeSheet();
+    }
+  });
+  
   overlay.addEventListener('click', e => { if (e.target === overlay) closeSheet(); });
 
   $('uploadBtn').addEventListener('click', (e) => {
@@ -1444,31 +1755,6 @@
       };
       imageContainer.style.cursor = 'zoom-in';
     }
-  }
-
-  function openEdit(item) {
-    $('sheetTitle').textContent = item ? 'Edit equipment' : 'Add equipment';
-    $('itemId').value = item ? item.id : '';
-    $('itemName').value = item ? item.name : '';
-    $('itemQty').value = item ? item.qty : 0;
-    $('itemMin').value = item ? item.min : 5;
-    $('itemUnit').value = item ? (item.unit || '') : '';
-    $('itemCategory').value = item ? (item.category || '') : '';
-    $('itemLocation').value = item ? (item.location || '') : '';
-    
-    const imgData = getImageData(item);
-    $('itemImageThumb').value = imgData.thumb;
-    $('itemImageHq').value = imgData.hq;
-    
-    $('deleteBtn').style.display = item ? 'block' : 'none';
-
-    loadImage(imgData.thumb, imgData.hq);
-
-    sheet.scrollTop = 0;
-    history.pushState({ modal: true }, '');
-    isModalOpen = true;
-    overlay.classList.add('open');
-    setTimeout(() => $('itemName').focus(), 200);
   }
 
   let isSubmitting = false;

@@ -139,13 +139,17 @@
   .sheet {
     width: 100%;
     max-width: 640px;
-    background: rgba(22, 22, 27, 0.82);
+    /* Semi-transparent default, will be dynamically enhanced by JS */
+    background: rgba(22, 22, 27, 0.65);
     border: 1px solid var(--border);
     border-radius: 20px;
     padding: 22px;
     max-height: 92vh;
     overflow-y: auto;
     animation: popIn 0.25s cubic-bezier(0.2,0.8,0.2,1);
+    /* Universal backdrop blur for the frosted glass effect over the list */
+    backdrop-filter: blur(16px) saturate(1.2);
+    -webkit-backdrop-filter: blur(16px) saturate(1.2);
   }
 
   @media (max-width: 639px) {
@@ -161,7 +165,7 @@
       padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
       -webkit-overflow-scrolling: touch;
       overscroll-behavior-y: contain;
-      background: rgba(22, 22, 27, 0.22);
+      background: rgba(22, 22, 27, 0.55);
       backdrop-filter: blur(20px) saturate(1.4);
       -webkit-backdrop-filter: blur(24px) saturate(1.4);
     }
@@ -197,7 +201,7 @@
     width: 100%;
     aspect-ratio: 16/9;
     min-height: 150px;
-    background: var(--surface-2);
+    background: rgba(31, 31, 38, 0.5);
     border: 2px dashed var(--border);
     border-radius: 12px;
     display: flex;
@@ -233,7 +237,7 @@
     align-items: center;
     justify-content: center;
     padding: 0;
-    background: rgba(31, 31, 38, 0.9);
+    background: rgba(31, 31, 38, 0.85);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
     border: 1px solid var(--border);
@@ -258,7 +262,7 @@
   .image-btn.delete-btn {
     color: var(--out);
     border-color: rgba(255,77,94,0.4);
-    background: rgba(31, 31, 38, 0.9);
+    background: rgba(31, 31, 38, 0.85);
   }
 
   .image-btn.delete-btn:hover {
@@ -303,7 +307,7 @@
   .compact-field input {
     width: 100%;
     padding: 6px 8px;
-    background: var(--bg);
+    background: rgba(11, 11, 14, 0.6);
     border: 1px solid var(--border);
     border-radius: 8px;
     color: var(--text);
@@ -324,7 +328,7 @@
   .field { margin-bottom: 14px; }
   .field label { display: block; font-size: 13px; color: var(--text-dim); margin-bottom: 6px; font-weight: 500; }
   .field input, .field select {
-    width: 100%; padding: 12px 14px; background: var(--bg); border: 1px solid var(--border);
+    width: 100%; padding: 12px 14px; background: rgba(11, 11, 14, 0.6); border: 1px solid var(--border);
     border-radius: 10px; color: var(--text); font-size: 16px;
     outline: none; transition: border-color 0.15s;
   }
@@ -340,7 +344,7 @@
   .btn-primary { background: var(--accent); color: white; border-color: var(--accent); }
   .btn-primary:active { opacity: 0.85; }
   .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-  .btn-secondary { background: var(--surface-2); color: var(--text); }
+  .btn-secondary { background: rgba(31, 31, 38, 0.8); color: var(--text); }
   .btn-danger { background: var(--out-soft); color: var(--out); border-color: rgba(255,77,94,0.3); }
 
   .toast {
@@ -566,14 +570,11 @@
 
   function setFallbackBackground() {
     const hue = Math.floor(Math.random() * 360);
-    const color1 = `hsl(${hue}, 25%, 12%)`;
-    const color2 = `hsl(${(hue + 30) % 360}, 25%, 18%)`;
-    
     const shapes = [];
     const numShapes = 5 + Math.floor(Math.random() * 4);
     for (let i = 0; i < numShapes; i++) {
       const type = Math.random() > 0.5 ? 'circle' : 'rect';
-      const opacity = (Math.random() * 0.06 + 0.02).toFixed(2);
+      const opacity = (Math.random() * 0.04 + 0.01).toFixed(2); // Very subtle
       if (type === 'circle') {
         const cx = Math.floor(Math.random() * 100);
         const cy = Math.floor(Math.random() * 100);
@@ -590,14 +591,16 @@
     }
     
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
-      <rect width="100%" height="100%" fill="${color1}"/>
+      <rect width="100%" height="100%" fill="transparent"/>
       ${shapes.join('')}
     </svg>`;
     
     const encodedSvg = encodeURIComponent(svg);
     const svgUrl = `url("data:image/svg+xml,${encodedSvg}")`;
     
-    sheet.style.background = `${svgUrl}, linear-gradient(180deg, ${color2} 0%, var(--surface) 65%, var(--bg) 100%)`;
+    // Semi-transparent tint fading to fully transparent
+    const colorTop = `hsla(${hue}, 25%, 20%, 0.35)`;
+    sheet.style.background = `${svgUrl}, linear-gradient(180deg, ${colorTop} 0%, transparent 65%)`;
     sheet.style.backgroundSize = `cover, cover`;
     sheet.style.backgroundPosition = `center, center`;
   }
@@ -646,15 +649,11 @@
       g = Math.round(g / count);
       b = Math.round(b / count);
       
-      const factor = 0.5;
-      const dr = Math.round(r * factor);
-      const dg = Math.round(g * factor);
-      const db = Math.round(b * factor);
+      // Use low alpha values for a transparent, frosted-glass fade
+      const colorTop = `rgba(${r}, ${g}, ${b}, 0.45)`;
+      const colorMid = `rgba(${r}, ${g}, ${b}, 0.15)`;
       
-      const color = `rgb(${dr}, ${dg}, ${db})`;
-      const colorLight = `rgb(${Math.min(255, dr + 40)}, ${Math.min(255, dg + 40)}, ${Math.min(255, db + 40)})`;
-      
-      sheet.style.background = `linear-gradient(180deg, ${colorLight} 0%, ${color} 35%, var(--surface) 75%, var(--bg) 100%)`;
+      sheet.style.background = `linear-gradient(180deg, ${colorTop} 0%, ${colorMid} 40%, transparent 85%)`;
       
     } catch (e) {
       console.warn('Canvas tainted or error reading image data:', e);

@@ -166,19 +166,20 @@
   @media (max-width: 639px) {
     .overlay.open { align-items: flex-start; }
     .sheet {
+      position: relative;
       min-height: 100vh;
       min-height: 100dvh;
       border-radius: 0;
       padding: 18px;
       padding-top: calc(18px + env(safe-area-inset-top, 0px));
-      padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px));
+      padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
       margin: 0;
       background: rgba(22, 22, 27, 0.55);
       backdrop-filter: blur(20px) saturate(1.4);
       -webkit-backdrop-filter: blur(24px) saturate(1.4);
     }
     .sheet h2 .close-btn {
-      position: fixed;
+      position: absolute;
       bottom: calc(24px + env(safe-area-inset-bottom, 0px));
       left: 50%;
       transform: translateX(-50%);
@@ -1842,7 +1843,6 @@
         savedItem = await addItem(data);
       }
 
-      // Show the detail view of the saved item
       if (savedItem) {
         showViewMode(savedItem);
       } else {

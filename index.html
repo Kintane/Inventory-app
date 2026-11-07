@@ -210,8 +210,23 @@
   }
   .close-btn { background: none; border: none; color: var(--text-dim); font-size: 24px; cursor: pointer; padding: 4px 8px; }
 
+  /* Subtle fade-in animation for mode switching */
+  @keyframes modeFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
   .view-mode { display: none; }
-  .view-mode.active { display: block; }
+  .view-mode.active {
+    display: block;
+    animation: modeFadeIn 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
   
   .view-header {
     display: flex;
@@ -348,7 +363,10 @@
   }
 
   .edit-mode { display: none; }
-  .edit-mode.active { display: block; }
+  .edit-mode.active {
+    display: block;
+    animation: modeFadeIn 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
 
   .name-field { margin-bottom: 14px; }
 
@@ -797,6 +815,9 @@
     currentViewMode = 'view';
     currentItemForView = item;
     
+    // Force animation restart by briefly removing and re-adding the class
+    viewMode.classList.remove('active');
+    void viewMode.offsetWidth; // trigger reflow
     viewMode.classList.add('active');
     editMode.classList.remove('active');
     
@@ -853,8 +874,11 @@
       currentItemForView = null;
     }
     
-    viewMode.classList.remove('active');
+    // Force animation restart
+    editMode.classList.remove('active');
+    void editMode.offsetWidth; // trigger reflow
     editMode.classList.add('active');
+    viewMode.classList.remove('active');
     
     $('editTitle').textContent = item ? 'Edit equipment' : 'Add equipment';
     $('itemId').value = item ? item.id : '';

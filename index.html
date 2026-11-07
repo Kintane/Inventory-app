@@ -792,6 +792,8 @@
     const viewPlaceholder = $('viewImagePlaceholder');
     const viewContainer = $('viewImageContainer');
     
+    // Clear image immediately to prevent flash of previous item
+    viewImg.src = '';
     viewImg.classList.remove('loaded');
     viewPlaceholder.style.display = 'block';
     viewContainer.style.cursor = 'default';
@@ -827,6 +829,11 @@
 
   function showEditMode(item) {
     currentViewMode = 'edit';
+    
+    // Clear currentItemForView when entering "Add item" mode (item is null)
+    if (!item) {
+      currentItemForView = null;
+    }
     
     viewMode.classList.remove('active');
     editMode.classList.add('active');
@@ -1077,7 +1084,12 @@
     if (isLightboxOpen) { closeLightboxInternal(); return; }
     if (isModalOpen) {
       if (currentViewMode === 'edit') {
-        showViewMode(currentItemForView);
+        // If in edit mode with no item (Add mode), close the sheet
+        if (!currentItemForView) {
+          closeSheetInternal();
+        } else {
+          showViewMode(currentItemForView);
+        }
       } else {
         const active = document.activeElement;
         const isInput = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT');

@@ -277,27 +277,36 @@
     border-radius: 12px;
     overflow: hidden;
     margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     cursor: zoom-in;
     position: relative;
   }
   
   .view-image img {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
     opacity: 0;
     transition: opacity 0.5s ease;
     display: block;
-}
+  }
   
   .view-image img.loaded {
     opacity: 1;
   }
   
   .view-image-placeholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     color: var(--text-faint);
     font-size: 13px;
     text-align: center;
@@ -400,24 +409,40 @@
     background: rgba(31, 31, 38, 0.5);
     border: 2px dashed var(--border);
     border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     overflow: hidden;
     position: relative;
   }
+
   .image-container img { 
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%; 
     height: 100%; 
     object-fit: cover; 
     opacity: 0;
     transition: opacity 0.5s ease;
     display: block;
-}
+  }
   .image-container img.loaded { 
     opacity: 1;
   }
-  .image-placeholder { color: var(--text-faint); font-size: 13px; text-align: center; padding: 20px; transition: opacity 0.3s ease; }
+  .image-placeholder { 
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-faint); 
+    font-size: 13px; 
+    text-align: center; 
+    padding: 20px; 
+    transition: opacity 0.3s ease; 
+  }
   .image-placeholder svg { width: 48px; height: 48px; margin-bottom: 8px; opacity: 0.5; }
 
   .image-buttons {
@@ -861,7 +886,6 @@
       
       viewImg.crossOrigin = "anonymous";
       viewImg.onload = () => {
-        // Fade out placeholder, then fade in image
         viewPlaceholder.style.opacity = '0';
         setTimeout(() => {
           viewImg.classList.add('loaded');

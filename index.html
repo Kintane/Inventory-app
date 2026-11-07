@@ -171,11 +171,30 @@
       border-radius: 0;
       padding: 18px;
       padding-top: calc(18px + env(safe-area-inset-top, 0px));
-      padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+      padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px));
       margin: 0;
       background: rgba(22, 22, 27, 0.55);
       backdrop-filter: blur(20px) saturate(1.4);
       -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    }
+    .sheet h2 .close-btn {
+      position: fixed;
+      bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+      left: 50%;
+      transform: translateX(-50%);
+      width: 56px;
+      height: 56px;
+      font-size: 32px;
+      background: rgba(31, 31, 38, 0.9);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      z-index: 100;
+      display: grid;
+      place-items: center;
+      padding: 0;
     }
   }
 
@@ -792,7 +811,6 @@
     const viewPlaceholder = $('viewImagePlaceholder');
     const viewContainer = $('viewImageContainer');
     
-    // Clear image immediately to prevent flash of previous item
     viewImg.src = '';
     viewImg.classList.remove('loaded');
     viewPlaceholder.style.display = 'block';
@@ -830,7 +848,6 @@
   function showEditMode(item) {
     currentViewMode = 'edit';
     
-    // Clear currentItemForView when entering "Add item" mode (item is null)
     if (!item) {
       currentItemForView = null;
     }
@@ -1084,7 +1101,6 @@
     if (isLightboxOpen) { closeLightboxInternal(); return; }
     if (isModalOpen) {
       if (currentViewMode === 'edit') {
-        // If in edit mode with no item (Add mode), close the sheet
         if (!currentItemForView) {
           closeSheetInternal();
         } else {
@@ -1322,6 +1338,7 @@
     toast('Added');
     try { await postToSheets({ action: 'add', ...data }); } 
     catch (err) { console.error('Sync failed:', err); toast('Sync failed (saved locally)'); }
+    return newItem;
   }
 
   async function updateItem(item, data) {
@@ -1338,6 +1355,7 @@
       render();
       toast('Save failed');
     }
+    return item;
   }
 
   async function deleteItem(item) {
@@ -1817,13 +1835,18 @@
         return;
       }
 
-      if (isModalOpen && history.state && history.state.modal) history.back();
-      else closeSheetInternal();
-
+      let savedItem;
       if (id && id.startsWith('row_')) {
-        await updateItem(items.find(i => i.id === id), data);
+        savedItem = await updateItem(items.find(i => i.id === id), data);
       } else {
-        await addItem(data);
+        savedItem = await addItem(data);
+      }
+
+      // Show the detail view of the saved item
+      if (savedItem) {
+        showViewMode(savedItem);
+      } else {
+        closeSheet();
       }
     } finally {
       isSubmitting = false;
